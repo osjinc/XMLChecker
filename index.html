@@ -3,7 +3,7 @@
 <head>
   <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v21</title>
+  <title>XML Checker v22</title>
   <style>
     .error {
       color: red;
@@ -76,17 +76,17 @@
       });
 
       // Проверка значений ключей из keywords2
-      keywords2.forEach(pattern => {
-        const patternMatches = xmlDoc.evaluate(`//*[@${pattern}]`, xmlDoc, null, XPathResult.ANY_TYPE, null);
-        let patternMatch = patternMatches.iterateNext();
-        while (patternMatch) {
-          const value = patternMatch.getAttribute(pattern);
+      keywords2.forEach(keyword => {
+        const keywordMatches = xmlDoc.evaluate(`//*[@${keyword}]`, xmlDoc, null, XPathResult.ANY_TYPE, null);
+        let keywordMatch = keywordMatches.iterateNext();
+        while (keywordMatch) {
+          const value = keywordMatch.getAttribute(keyword);
 
           // Предупреждение при наличии кириллицы в значении ключа "ключ=значение"
           if (/[\u0400-\u04FF]/.test(value)) {
-            displayResultTable(resultTable, value.substring(0, 20), `Предупреждение: Значение в ключе ${pattern} содержит кириллицу: ${value.substring(0, 20)}...`, 'warning');
+            displayResultTable(resultTable, value.substring(0, 20), `Предупреждение: Значение в ключе ${keyword} содержит кириллицу: ${value.substring(0, 20)}...`, 'warning');
           }
-          patternMatch = patternMatches.iterateNext();
+          keywordMatch = keywordMatches.iterateNext();
         }
       });
     }
