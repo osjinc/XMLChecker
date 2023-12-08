@@ -3,7 +3,7 @@
 <head>
   <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v22</title>
+  <title>XML Checker v23</title>
   <style>
     .error {
       color: red;
@@ -75,17 +75,12 @@
         }
       });
 
-      // Проверка значений ключей из keywords2
+      // Проверка ключевых слов2
       keywords2.forEach(keyword => {
-        const keywordMatches = xmlDoc.evaluate(`//*[@${keyword}]`, xmlDoc, null, XPathResult.ANY_TYPE, null);
+        const keywordMatches = xmlDoc.evaluate(`//text()[contains(translate(., 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'), '${keyword}')]/..`, xmlDoc, null, XPathResult.ANY_TYPE, null);
         let keywordMatch = keywordMatches.iterateNext();
         while (keywordMatch) {
-          const value = keywordMatch.getAttribute(keyword);
-
-          // Предупреждение при наличии кириллицы в значении ключа "ключ=значение"
-          if (/[\u0400-\u04FF]/.test(value)) {
-            displayResultTable(resultTable, value.substring(0, 20), `Предупреждение: Значение в ключе ${keyword} содержит кириллицу: ${value.substring(0, 20)}...`, 'warning');
-          }
+          displayResultTable(keywordTable, keywordMatch.textContent, `Найдено ключевое слово: ${keyword}`, 'error');
           keywordMatch = keywordMatches.iterateNext();
         }
       });
@@ -109,7 +104,7 @@
     }
 
     function displayResultTable(tableDiv, value, message, cssClass) {
-      const row = tableDiv.insertRow(-1);
+      const row = tableDiv.insertRow(-1);  // исправление тут
       const cell1 = row.insertCell(0);
       const cell2 = row.insertCell(1);
 
