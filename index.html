@@ -3,7 +3,7 @@
 <head>
   <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v6</title>
+  <title>XML Checker v7</title>
   <style>
     .highlight {
       color: red;
@@ -67,7 +67,7 @@
                 const endIndex = Math.min(match.index + match[0].length + 10, xmlData.length);
                 const context = xmlData.substring(startIndex, endIndex);
 
-                if (context.includes(value)) {
+                if (!/^[a-zA-Z\s]+$/.test(match[1]) && context.includes(value)) {
                   matches.push({ template: template.name, value, context });
                 }
               }
@@ -89,7 +89,9 @@
               const endIndex = Math.min(match.index + match[0].length + 10, xmlData.length);
               const context = xmlData.substring(startIndex, endIndex);
 
-              matches.push({ template: 'Предупреждение', value, context });
+              if (context.includes(value)) {
+                matches.push({ template: 'Предупреждение', value, context });
+              }
             }
           });
 
@@ -108,7 +110,7 @@
               const endIndex = Math.min(match.index + match[0].length + 10, xmlData.length);
               const context = xmlData.substring(startIndex, endIndex);
 
-              if (/[^a-zA-Z]/.test(match[1])) {
+              if (!/^[a-zA-Z\s]+$/.test(match[1])) {
                 matches.push({ template: 'Не латиница', value, context });
               }
             }
@@ -139,8 +141,8 @@
             row.insertCell(0).textContent = match.template;
 
             const highlightClass = match.template === 'Не латиница' ? 'highlight' : 'warning';
-            row.insertCell(1).innerHTML = `<span class="${highlightClass}">${match.value}</span>`;
-            row.insertCell(2).innerHTML = `<span class="${highlightClass}">${match.value}</span>`;
+            row.insertCell(1).innerHTML = match.value ? `<span class="${highlightClass}">${match.value}</span>` : '-';
+            row.insertCell(2).innerHTML = match.value ? `<span class="${highlightClass}">${match.value}</span>` : '-';
             row.insertCell(3).textContent = match.context;
           });
 
