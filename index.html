@@ -3,7 +3,7 @@
 <head>
   <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v15</title>
+  <title>XML Checker v16</title>
   <style>
     .error {
       color: red;
@@ -26,195 +26,96 @@
 <body>
   <input type="file" id="xmlFileInput" accept=".xml">
   <button onclick="checkKeywords()">Проверить ключевые слова</button>
-  <div id="result1"></div>
-  
-  <button onclick="checkKeyValue()">Проверить ключ="значение"</button>
-  <div id="result2"></div>
-  
-  <button onclick="checkRecommendedKeyValue()">Проверить рекомендуемые ключ="значение"</button>
-  <div id="result3"></div>
-
-  <button onclick="checkLatinKeyValue()">Проверить латинские символы в значении ключа</button>
-  <div id="result4"></div>
+  <button onclick="checkKeyValues()">Проверить ключ="значение"</button>
+  <div id="result"></div>
 
   <script>
     function checkKeywords() {
       const fileInput = document.getElementById('xmlFileInput');
-      const resultDiv1 = document.getElementById('result1');
-
       const file = fileInput.files[0];
 
       if (!file) {
-        resultDiv1.innerHTML = 'Выберите XML-файл.';
+        displayResult('Выберите XML-файл.');
         return;
       }
 
-      const reader = new FileReader();
-
-      reader.onload = function (event) {
-        const xmlData = event.target.result;
-        parseAndCheckKeywords(xmlData);
-      };
-
-      reader.readAsText(file, 'windows-1251');
+      readFile(file, 'windows-1251', checkForKeywords);
     }
 
-    function parseAndCheckKeywords(xmlData) {
-      try {
-        const xmlDoc = new DOMParser().parseFromString(xmlData, 'text/xml');
-        const resultDiv1 = document.getElementById('result1');
+    function checkForKeywords(xmlDoc) {
+      const keywords = ['TST', 'DEV'];
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '';
 
-        resultDiv1.innerHTML = '';
-
-        // Шаблон 1: Проверка наличия ключевых слов
-        checkForKeywords(xmlDoc, ['TST', 'DEV'], resultDiv1);
-
-      } catch (error) {
-        console.error('Ошибка при обработке XML:', error);
-        const resultDiv = document.getElementById('result1');
-        resultDiv.innerHTML = 'Произошла ошибка при обработке XML.';
-      }
-    }
-
-    function checkForKeywords(xmlDoc, keywords, resultDiv) {
       keywords.forEach(keyword => {
         const keywordMatches = xmlDoc.evaluate(`//*[contains(text(), "${keyword}")]`, xmlDoc, null, XPathResult.ANY_TYPE, null);
         let keywordMatch = keywordMatches.iterateNext();
         while (keywordMatch) {
-          resultDiv.innerHTML += `<p class="error">Найдено ключевое слово: ${keyword}</p>`;
+          displayResult(`Найдено ключевое слово: ${keyword}`, resultDiv, 'error');
           keywordMatch = keywordMatches.iterateNext();
         }
       });
     }
 
-    function checkKeyValue() {
+    function checkKeyValues() {
       const fileInput = document.getElementById('xmlFileInput');
-      const resultDiv2 = document.getElementById('result2');
-
       const file = fileInput.files[0];
 
       if (!file) {
-        resultDiv2.innerHTML = 'Выберите XML-файл.';
+        displayResult('Выберите XML-файл.');
         return;
       }
 
-      const reader = new FileReader();
-
-      reader.onload = function (event) {
-        const xmlData = event.target.result;
-        parseAndCheckKeyValue(xmlData);
-      };
-
-      reader.readAsText(file, 'windows-1251');
+      readFile(file, 'windows-1251', checkForKeyValues);
     }
 
-    function parseAndCheckKeyValue(xmlData) {
-      try {
-        const xmlDoc = new DOMParser().parseFromString(xmlData, 'text/xml');
-        const resultDiv2 = document.getElementById('result2');
+    function checkForKeyValues(xmlDoc) {
+      const keyValues = ['KEY1', 'KEY2'];
+      const resultDiv = document.getElementById('result');
+      resultDiv.innerHTML = '';
 
-        resultDiv2.innerHTML = '';
+      keyValues.forEach(key => {
+        const keyValueMatches = xmlDoc.evaluate(`//*[@${key}]`, xmlDoc, null, XPathResult.ANY_TYPE, null);
+        let keyValueMatch = keyValueMatches.iterateNext();
+        while (keyValueMatch) {
+          const value = keyValueMatch.getAttribute(key);
 
-        // Шаблон 2: Проверка полного совпадения ключ="значение"
-        checkForKeyValue(xmlDoc, ['KEY1', 'KEY2'], resultDiv2);
-
-      } catch (error) {
-        console.error('Ошибка при обработке XML:', error);
-        const resultDiv = document.getElementById('result2');
-        resultDiv.innerHTML = 'Произошла ошибка при обработке XML.';
-      }
-    }
-
-    function checkRecommendedKeyValue() {
-      const fileInput = document.getElementById('xmlFileInput');
-      const resultDiv3 = document.getElementById('result3');
-
-      const file = fileInput.files[0];
-
-      if (!file) {
-        resultDiv3.innerHTML = 'Выберите XML-файл.';
-        return;
-      }
-
-      const reader = new FileReader();
-
-      reader.onload = function (event) {
-        const xmlData = event.target.result;
-        parseAndCheckRecommendedKeyValue(xmlData);
-      };
-
-      reader.readAsText(file, 'windows-1251');
-    }
-
-    function parseAndCheckRecommendedKeyValue(xmlData) {
-      try {
-        const xmlDoc = new DOMParser().parseFromString(xmlData, 'text/xml');
-        const resultDiv3 = document.getElementById('result3');
-
-        resultDiv3.innerHTML = '';
-
-        // Шаблон 3: Проверка рекомендуемых ключ="значение"
-        checkForKeyValue(xmlDoc, ['RECOMMENDED1', 'RECOMMENDED2'], resultDiv3, 'warning');
-
-      } catch (error) {
-        console.error('Ошибка при обработке XML:', error);
-        const resultDiv = document.getElementById('result3');
-        resultDiv.innerHTML = 'Произошла ошибка при обработке XML.';
-      }
-    }
-
-    function checkLatinKeyValue() {
-      const fileInput = document.getElementById('xmlFileInput');
-      const resultDiv4 = document.getElementById('result4');
-
-      const file = fileInput.files[0];
-
-      if (!file) {
-        resultDiv4.innerHTML = 'Выберите XML-файл.';
-        return;
-      }
-
-      const reader = new FileReader();
-
-      reader.onload = function (event) {
-        const xmlData = event.target.result;
-        parseAndCheckLatinKeyValue(xmlData);
-      };
-
-      reader.readAsText(file, 'windows-1251');
-    }
-
-    function parseAndCheckLatinKeyValue(xmlData) {
-      try {
-        const xmlDoc = new DOMParser().parseFromString(xmlData, 'text/xml');
-        const resultDiv4 = document.getElementById('result4');
-
-        resultDiv4.innerHTML = '';
-
-        // Шаблон 4: Проверка значения ключа на латиницу, "_", "-", "$", а также пустое значение
-        checkForKeyValue(xmlDoc, ['KEY'], resultDiv4, 'error', /^[a-zA-Z0-9_$-]*$/);
-
-      } catch (error) {
-        console.error('Ошибка при обработке XML:', error);
-        const resultDiv = document.getElementById('result4');
-        resultDiv.innerHTML = 'Произошла ошибка при обработке XML.';
-      }
-    }
-
-    function checkForKeyValue(xmlDoc, keys, resultDiv, cssClass, valuePattern) {
-      keys.forEach(key => {
-        const keyValues = xmlDoc.evaluate(`//*[@${key}]`, xmlDoc, null, XPathResult.ANY_TYPE, null);
-        let keyValue = keyValues.iterateNext();
-        while (keyValue) {
-          const value = keyValue.getAttribute(key);
-          if (valuePattern && !valuePattern.test(value)) {
-            resultDiv.innerHTML += `<p class="${cssClass}">Найдено значение с ошибкой в ключе ${key}: ${value.substring(0, 20)}...</p>`;
+          // Проверка наличия кирилицы в значении ключа "ключ=значение"
+          if (/[\u0400-\u04FF]/.test(value)) {
+            displayResult(`Ошибка: Значение в ключе ${key} содержит кириллицу: ${value.substring(0, 20)}...`, resultDiv, 'error');
           } else {
-            resultDiv.innerHTML += `<p class="${cssClass}">Найдено значение в ключе ${key}: ${value.substring(0, 20)}...</p>`;
+            displayResult(`Найдено значение в ключе ${key}: ${value.substring(0, 20)}...`, resultDiv);
           }
-          keyValue = keyValues.iterateNext();
+          keyValueMatch = keyValueMatches.iterateNext();
         }
       });
+    }
+
+    function readFile(file, encoding, callback) {
+      const reader = new FileReader();
+
+      reader.onload = function (event) {
+        const xmlData = event.target.result;
+        try {
+          const xmlDoc = new DOMParser().parseFromString(xmlData, 'text/xml');
+          callback(xmlDoc);
+        } catch (error) {
+          console.error('Ошибка при обработке XML:', error);
+          displayResult('Произошла ошибка при обработке XML.');
+        }
+      };
+
+      reader.readAsText(file, encoding);
+    }
+
+    function displayResult(message, resultDiv, cssClass) {
+      resultDiv = resultDiv || document.getElementById('result');
+      const pElement = document.createElement('p');
+      pElement.textContent = message;
+      if (cssClass) {
+        pElement.classList.add(cssClass);
+      }
+      resultDiv.appendChild(pElement);
     }
   </script>
 </body>
