@@ -108,8 +108,12 @@
                   const endIndex = startIndex + value.length;
                   const context = line.substring(startIndex - 10, endIndex + 10);
 
-                  // Проверка на игнорируемые слова
-                  if (!ignoreList.some(word => context.includes(word))) {
+                  // Проверка на игнорируемые слова, пустое значение NAME или содержание не-латинских символов и точки
+                  if (
+                    !ignoreList.some(word => context.includes(word)) &&
+                    !(value === 'NAME' && (/^\s*NAME\s*=\s*""\s*$/.test(context) || /^[a-zA-Z\s]+$/.test(context))) &&
+                    !(template.name === 'Шаблон 4' && !/^[^a-zA-Z\s.]*$/.test(context))
+                  ) {
                     matches.push({ template: template.name, value, context, lineNumber: lineNumber + 1 });
                   }
                 }
