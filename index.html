@@ -3,7 +3,7 @@
 <head>
   <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v17</title>
+  <title>XML Checker v18</title>
   <style>
     .error {
       color: red;
@@ -43,16 +43,17 @@
     }
 
     function checkForKeywords(xmlDoc) {
-      const keywords = ['TST', 'DEV'];
       const resultDiv = document.getElementById('result');
       resultDiv.innerHTML = '';
 
-      keywords.forEach(keyword => {
-        const keywordMatches = xmlDoc.evaluate(`//*[contains(text(), "${keyword}")]`, xmlDoc, null, XPathResult.ANY_TYPE, null);
-        let keywordMatch = keywordMatches.iterateNext();
-        while (keywordMatch) {
-          displayResult(`Найдено ключевое слово: ${keyword}`, resultDiv, 'error');
-          keywordMatch = keywordMatches.iterateNext();
+      const patterns = ['TST', 'DEV'];
+
+      patterns.forEach(pattern => {
+        const patternMatches = xmlDoc.evaluate(`//*[contains(text(), "${pattern}")]`, xmlDoc, null, XPathResult.ANY_TYPE, null);
+        let patternMatch = patternMatches.iterateNext();
+        while (patternMatch) {
+          displayResult(`Найдено ключевое слово: ${pattern}`, resultDiv, 'error');
+          patternMatch = patternMatches.iterateNext();
         }
       });
     }
@@ -70,21 +71,22 @@
     }
 
     function checkForKeyValues(xmlDoc) {
-      const keyValues = ['KEY1', 'KEY2'];
       const resultDiv = document.getElementById('result');
       resultDiv.innerHTML = '';
 
-      keyValues.forEach(key => {
-        const keyValueMatches = xmlDoc.evaluate(`//*[@${key}]`, xmlDoc, null, XPathResult.ANY_TYPE, null);
-        let keyValueMatch = keyValueMatches.iterateNext();
-        while (keyValueMatch) {
-          const value = keyValueMatch.getAttribute(key);
+      const patterns = ['KEY1', 'KEY2'];
+
+      patterns.forEach(pattern => {
+        const patternMatches = xmlDoc.evaluate(`//*[@${pattern}]`, xmlDoc, null, XPathResult.ANY_TYPE, null);
+        let patternMatch = patternMatches.iterateNext();
+        while (patternMatch) {
+          const value = patternMatch.getAttribute(pattern);
 
           // Проверка наличия кирилицы в значении ключа "ключ=значение"
           if (/[\u0400-\u04FF]/.test(value)) {
-            displayResult(`Ошибка: Значение в ключе ${key} содержит кириллицу: ${value.substring(0, 20)}...`, resultDiv, 'error');
+            displayResult(`Ошибка: Значение в ключе ${pattern} содержит кириллицу: ${value.substring(0, 20)}...`, resultDiv, 'error');
           }
-          keyValueMatch = keyValueMatches.iterateNext();
+          patternMatch = patternMatches.iterateNext();
         }
       });
     }
