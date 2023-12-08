@@ -3,7 +3,7 @@
 <head>
   <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v25</title>
+  <title>XML Checker v26</title>
   <style>
     .error {
       color: red;
@@ -20,12 +20,25 @@
 </head>
 <body>
   <input type="file" id="xmlFileInput" accept=".xml">
-  <button onclick="checkXML()">Проверить XML</button>
-  <div id="keywordTable"></div>
+  <button onclick="checkKeywords()">Проверить ключевые слова</button>
+  <button onclick="checkKeyValues()">Проверить значения ключей</button>
+  <button onclick="checkKeywords2()">Проверить ключевые слова2</button>
   <div id="resultTable" class="result"></div>
 
   <script>
-    function checkXML() {
+    function checkKeywords() {
+      checkXML(['TST', 'DEV', 'secure'], 'KEY1', 'KEY2', []);
+    }
+
+    function checkKeyValues() {
+      checkXML([], 'KEY1', 'KEY2', ['key3', 'key4']);
+    }
+
+    function checkKeywords2() {
+      checkXML(['key3', 'key4'], '', '', []);
+    }
+
+    function checkXML(keywords, pattern1, pattern2, keywords2) {
       const fileInput = document.getElementById('xmlFileInput');
       const file = fileInput.files[0];
 
@@ -34,41 +47,40 @@
         return;
       }
 
-      readFile(file, 'windows-1251', processXML);
+      readFile(file, 'windows-1251', xmlDoc => processXML(xmlDoc, keywords, pattern1, pattern2, keywords2));
     }
 
-    function processXML(xmlDoc) {
-      const keywordTable = document.getElementById('keywordTable');
+    function processXML(xmlDoc, keywords, pattern1, pattern2, keywords2) {
       const resultTable = document.getElementById('resultTable');
-
-      const keywords = ['TST', 'DEV', 'secure'];
-      const patterns = ['KEY1', 'KEY2'];
-      const keywords2 = ['key3', 'key4'];
+      resultTable.innerHTML = '';
 
       // Проверка ключевых слов
       keywords.forEach(keyword => {
         const keywordMatches = xmlDoc.evaluate(`//text()[contains(translate(., 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'), '${keyword}')]/..`, xmlDoc, null, XPathResult.ANY_TYPE, null);
         let keywordMatch = keywordMatches.iterateNext();
         while (keywordMatch) {
-          displayResultTable(keywordTable, keywordMatch.textContent, `Найдено ключевое слово: ${keyword}`, 'error');
+          displayResultTable(resultTable, keywordMatch.textContent, `Найдено ключевое слово: ${keyword}`, 'error');
           keywordMatch = keywordMatches.iterateNext();
         }
       });
 
       // Проверка значений ключей
-      patterns.forEach(pattern => {
-        const patternMatches = xmlDoc.evaluate(`//*[@${pattern}]`, xmlDoc, null, XPathResult.ANY_TYPE, null);
-        let patternMatch = patternMatches.iterateNext();
-        while (patternMatch) {
-          const value = patternMatch.getAttribute(pattern);
+      if (pattern1 || pattern2) {
+        const patterns = [pattern1, pattern2];
+        patterns.forEach(pattern => {
+          const patternMatches = xmlDoc.evaluate(`//*[@${pattern}]`, xmlDoc, null, XPathResult.ANY_TYPE, null);
+          let patternMatch = patternMatches.iterateNext();
+          while (patternMatch) {
+            const value = patternMatch.getAttribute(pattern);
 
-          // Проверка наличия кирилицы в значении ключа "ключ=значение"
-          if (/[\u0400-\u04FF]/.test(value)) {
-            displayResultTable(resultTable, value.substring(0, 20), `Ошибка: Значение в ключе ${pattern} содержит кириллицу: ${value.substring(0, 20)}...`, 'error');
+            // Проверка наличия кирилицы в значении ключа "ключ=значение"
+            if (/[\u0400-\u04FF]/.test(value)) {
+              displayResultTable(resultTable, value.substring(0, 20), `Ошибка: Значение в ключе ${pattern} содержит кириллицу: ${value.substring(0, 20)}...`, 'error');
+            }
+            patternMatch = patternMatches.iterateNext();
           }
-          patternMatch = patternMatches.iterateNext();
-        }
-      });
+        });
+      }
 
       // Проверка ключевых слов2
       keywords2.forEach(keyword => {
