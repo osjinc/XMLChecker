@@ -108,10 +108,10 @@
                   const endIndex = startIndex + value.length;
                   const context = line.substring(startIndex - 10, endIndex + 10);
 
-                  // Проверка на игнорируемые слова, пустое значение и содержание не-латинских символов и точки
+                  // Проверка на игнорируемые слова, пустое значение и содержание кириллицы
                   if (
                     !ignoreList.some(word => context.includes(word)) &&
-                    !(template.name === 'Шаблон 4' && !/^[a-zA-Z\s]*$/.test(context))
+                    !(template.name === 'Шаблон 4' && /[а-яА-Я]/.test(context))
                   ) {
                     matches.push({ template: template.name, value, context, lineNumber: lineNumber + 1 });
                   }
