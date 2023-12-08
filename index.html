@@ -59,9 +59,9 @@
         }
 
         const allMatches = [];
-        regexList.forEach((regex, index) => {
+        regexList.forEach(regex => {
           const matches = findMatchesWithContext(regex, xmlData);
-          allMatches.push({ pattern: getPatternText(index), matches });
+          allMatches.push({ pattern: getPatternText(regex), matches });
         });
 
         // Отображение результатов на странице
@@ -88,15 +88,8 @@
       }).join(', ');
     }
 
-    function getPatternText(index) {
-      switch (index) {
-        case 0:
-          return 'DEV или TST';
-        case 1:
-          return 'функция="значение"';
-        default:
-          return '';
-      }
+    function getPatternText(regex) {
+      return regex.source;
     }
   </script>
 </body>
