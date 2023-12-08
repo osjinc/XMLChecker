@@ -25,10 +25,6 @@
       background-color: #f2f2f2;
     }
 
-    #ignoreList {
-      display: none;
-    }
-
     #listsContainer {
       margin-top: 20px;
     }
@@ -39,12 +35,10 @@
   <button onclick="checkXML()">Проверить XML</button>
   <div id="result"></div>
   <div id="listsContainer">
+    <h3>Список шаблонов:</h3>
+    <div id="templateLists"></div>
     <h3>Список игнорируемых слов:</h3>
     <input type="text" id="ignoreList" placeholder="Список игнорируемых слов (через запятую)" value="test123, test36853">
-    <h3>Список шаблонов:</h3>
-    <ul>
-      <li>Шаблон 1: DEV, TST</li>
-    </ul>
   </div>
 
   <script>
@@ -74,7 +68,11 @@
     function parseAndCheckXML(xmlData, ignoreList) {
       try {
         // Ваш код обработки XML-данных и проверки наличия ошибок
-        const regex1 = /DEV|TST/g;
+        const templateLists = [
+          { name: 'Шаблон 1', regex: /DEV|TST/g },
+          { name: 'Шаблон 2', regex: /функция="значение"/g },
+          // Добавьте другие списки шаблонов, если необходимо
+        ];
 
         // Функция для поиска вхождений с контекстом и игнорированием слов
         function findMatchesWithContext(regex, xmlData) {
@@ -95,33 +93,43 @@
           return matches;
         }
 
-        const matches1 = findMatchesWithContext(regex1, xmlData);
-
         // Отображение результатов на странице в виде таблицы
         const resultDiv = document.getElementById('result');
         resultDiv.innerHTML = '<h2>Результаты:</h2>';
-        
-        if (matches1.length > 0) {
-          const table = document.createElement('table');
-          table.innerHTML = `
-            <tr>
-              <th>Шаблон</th>
-              <th>Вхождение</th>
-              <th>Контекст</th>
-            </tr>
-          `;
 
-          matches1.forEach(match => {
-            const row = table.insertRow();
-            row.insertCell(0).textContent = 'Шаблон 1';
-            row.insertCell(1).innerHTML = `<span class="highlight">${match.value}</span>`;
-            row.insertCell(2).textContent = match.context;
-          });
+        templateLists.forEach(templateList => {
+          const matches = findMatchesWithContext(templateList.regex, xmlData);
 
-          resultDiv.appendChild(table);
-        } else {
-          resultDiv.innerHTML += '<p>Нет найденных вхождений.</p>';
-        }
+          if (matches.length > 0) {
+            const table = document.createElement('table');
+            table.innerHTML = `
+              <tr>
+                <th>${templateList.name}</th>
+                <th>Вхождение</th>
+                <th>Контекст</th>
+              </tr>
+            `;
+
+            matches.forEach(match => {
+              const row = table.insertRow();
+              row.insertCell(0).textContent = templateList.name;
+              row.insertCell(1).innerHTML = `<span class="highlight">${match.value}</span>`;
+              row.insertCell(2).textContent = match.context;
+            });
+
+            resultDiv.appendChild(table);
+          } else {
+            resultDiv.innerHTML += `<p>Нет найденных вхождений для ${templateList.name}.</p>`;
+          }
+        });
+
+        // Отображение списка шаблонов
+        const templateListsContainer = document.getElementById('templateLists');
+        templateListsContainer.innerHTML = '<ul>';
+        templateLists.forEach(templateList => {
+          templateListsContainer.innerHTML += `<li>${templateList.name}</li>`;
+        });
+        templateListsContainer.innerHTML += '</ul>';
       } catch (error) {
         // Обработка ошибок на клиенте
         console.error('Ошибка при обработке XML:', error);
