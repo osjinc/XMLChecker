@@ -53,7 +53,7 @@
       { name: 'Шаблон 1', values: ['DEV', 'TST'] },
       { name: 'Шаблон 2', values: ['функция="значение"'] },
       { name: 'Шаблон 3', values: ['warning'] },
-      { name: 'Шаблон 4', values: ['NAME'] }, // Шаблон 4 с ключем NAME
+      { name: 'Шаблон 4', values: ['NAME'] },
       // Добавьте другие списки шаблонов, если необходимо
     ];
 
@@ -85,7 +85,7 @@
         parseAndCheckXML(xmlData, ignoreList);
       };
 
-      reader.readAsText(file, 'windows-1251'); // Указываем кодировку windows-1251
+      reader.readAsText(file, 'windows-1251');
     }
 
     function parseAndCheckXML(xmlData, ignoreList) {
@@ -93,33 +93,30 @@
         // Ваш код обработки XML-данных и проверки наличия ошибок
 
         // Функция для поиска вхождений с контекстом и игнорированием слов
-        function findMatchesWithContext(templates, xmlData) {
+        function findMatchesWithContext(template, xmlData) {
           const matches = [];
+          const value = template.values[0];
 
           // Разбиваем текст на строки
           const lines = xmlData.split('\n');
 
-          templates.forEach(template => {
-            template.values.forEach(value => {
-              lines.forEach((line, lineNumber) => {
-                // Поиск вхождений в строке
-                const startIndex = line.indexOf(value);
-                if (startIndex !== -1) {
-                  const endIndex = startIndex + value.length;
-                  const context = line.substring(startIndex - 10, endIndex + 10);
+          lines.forEach((line, lineNumber) => {
+            // Поиск вхождений в строке
+            const startIndex = line.indexOf(value);
+            if (startIndex !== -1) {
+              const endIndex = startIndex + value.length;
+              const context = line.substring(startIndex - 10, endIndex + 10);
 
-                  // Проверка на игнорируемые слова, пустое значение и содержание не-латинских символов и точки
-                  if (
-                    !ignoreList.some(word => context.includes(word)) &&
-                    !(template.name === 'Шаблон 4' && !/^[a-zA-Z\s]*$/.test(context)) &&
-                    !(template.name === 'Шаблон 4' && /NAME\s*=\s*""/.test(context)) &&
-                    !(template.name === 'Шаблон 4' && /NAME\s*=\s*"[a-zA-Z]*"/.test(context))
-                  ) {
-                    matches.push({ template: template.name, value, context, lineNumber: lineNumber + 1 });
-                  }
-                }
-              });
-            });
+              // Проверка на игнорируемые слова, пустое значение и содержание не-латинских символов и точки
+              if (
+                !ignoreList.some(word => context.includes(word)) &&
+                !(template.name === 'Шаблон 4' && !/^[a-zA-Z\s]*$/.test(context)) &&
+                !(template.name === 'Шаблон 4' && /NAME\s*=\s*""/.test(context)) &&
+                !(template.name === 'Шаблон 4' && /NAME\s*=\s*"[a-zA-Z]*"/.test(context))
+              ) {
+                matches.push({ template: template.name, value, context, lineNumber: lineNumber + 1 });
+              }
+            }
           });
 
           return matches;
@@ -129,7 +126,11 @@
         const resultDiv = document.getElementById('result');
         resultDiv.innerHTML = '<h2>Результаты:</h2>';
 
-        const matches = findMatchesWithContext(templateLists, xmlData);
+        const matches = [];
+
+        templateLists.forEach(template => {
+          matches.push(...findMatchesWithContext(template, xmlData));
+        });
 
         if (matches.length > 0) {
           const table = document.createElement('table');
