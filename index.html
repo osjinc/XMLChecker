@@ -1,73 +1,28 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="windows-1251">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v2</title>
+  <title>XML Checker v4</title>
   <style>
     .highlight {
       color: red;
       font-weight: bold;
     }
-
     .warning {
-      color: orange;
+      color: yellow;
       font-weight: bold;
-    }
-
-    table {
-      border-collapse: collapse;
-      width: 100%;
-    }
-
-    th, td {
-      border: 1px solid #dddddd;
-      text-align: left;
-      padding: 8px;
-    }
-
-    th {
-      background-color: #f2f2f2;
-    }
-
-    #listsContainer {
-      margin-top: 20px;
     }
   </style>
 </head>
 <body>
-  <div id="listsContainer">
-    <h3>Список шаблонов:</h3>
-    <ul id="templateList"></ul>
-    <h3>Список игнорируемых слов:</h3>
-    <input type="text" id="ignoreList" placeholder="Список игнорируемых слов (через запятую)" value="test123, test36853">
-  </div>
-
   <input type="file" id="xmlFileInput" accept=".xml">
   <button onclick="checkXML()">Проверить XML</button>
   <div id="result"></div>
 
   <script>
-    // Список шаблонов
-    const templateLists = [
-      { name: 'Шаблон 1', values: ['DEV', 'TST'] },
-      { name: 'Шаблон 2', values: ['функция="значение"'] },
-      { name: 'Шаблон 3', values: ['warning'] },
-      { name: 'Шаблон 4', values: ['NAME'] },
-      // Добавьте другие списки шаблонов, если необходимо
-    ];
-
-    // Отображение списков на странице
-    const templateListContainer = document.getElementById('templateList');
-    templateLists.forEach(templateList => {
-      const templateItem = document.createElement('li');
-      templateItem.textContent = `${templateList.name}: ${templateList.values.join(', ')}`;
-      templateListContainer.appendChild(templateItem);
-    });
-
     function checkXML() {
       const fileInput = document.getElementById('xmlFileInput');
-      const ignoreListInput = document.getElementById('ignoreList');
       const resultDiv = document.getElementById('result');
 
       const file = fileInput.files[0];
@@ -81,27 +36,31 @@
 
       reader.onload = function (event) {
         const xmlData = event.target.result;
-        const ignoreList = ignoreListInput.value.split(',').map(word => word.trim());
-        parseAndCheckXML(xmlData, ignoreList);
+        parseAndCheckXML(xmlData);
       };
 
-      reader.readAsText(file, 'windows-1251');
+      reader.readAsText(file);
     }
 
-    function parseAndCheckXML(xmlData, ignoreList) {
+    function parseAndCheckXML(xmlData) {
       try {
-        // Ваш код обработки XML-данных и проверки наличия ошибок
+        const templateLists = [
+          { name: 'Шаблон 1', values: ['DEV', 'TST'] },
+          { name: 'Шаблон 2', values: ['функция="значение"'] },
+          { name: 'Шаблон 3', values: ['warning'] },
+          { name: 'Шаблон 4', values: ['NAME'] },
+        ];
 
-        // Функция для поиска вхождений с контекстом и игнорированием слов
+        const ignoreList = ['test123', 'test36853'];
+        const resultDiv = document.getElementById('result');
+
         function findMatchesWithContext(template, xmlData) {
           const matches = [];
           const value = template.values[0];
 
-          // Разбиваем текст на строки
           const lines = xmlData.split('\n');
 
           lines.forEach((line, lineNumber) => {
-            // Поиск вхождений в строке
             const startIndex = line.indexOf(value);
             if (startIndex !== -1) {
               const endIndex = startIndex + value.length;
@@ -110,11 +69,11 @@
               // Добавляем дебаг-вывод
               console.log(`Template: ${template.name}, Value: ${value}, Context: ${context}, LineNumber: ${lineNumber + 1}`);
 
-              // Проверка на игнорируемые слова, пустое значение и содержание кириллицы
               if (
                 !ignoreList.some(word => context.includes(word)) &&
+                !(template.name === 'Шаблон 4' && /[^a-zA-Z]/.test(value)) &&
                 !(template.name === 'Шаблон 4' && /[а-яёЁА-Я]/.test(value))
-
+              ) {
                 matches.push({ template: template.name, value, context, lineNumber: lineNumber + 1 });
               }
             }
@@ -122,10 +81,6 @@
 
           return matches;
         }
-
-        // Отображение результатов на странице в виде таблицы
-        const resultDiv = document.getElementById('result');
-        resultDiv.innerHTML = '<h2>Результаты:</h2>';
 
         const matches = [];
 
@@ -153,14 +108,14 @@
             if (match.template === 'Шаблон 3') {
               row.insertCell(1).innerHTML = `<span class="warning">${match.value}</span>`;
             } else if (match.template === 'Шаблон 4') {
-              row.insertCell(1).innerHTML = /[^а-яёЁА-Я]/.test(match.value)
+              row.insertCell(1).innerHTML = /[а-яёЁА-Я]/.test(match.value)
                 ? `<span class="highlight">${match.value}</span>`
                 : match.value;
             } else {
               row.insertCell(1).textContent = match.value;
             }
 
-            row.insertCell(2).innerHTML = /[^а-яёЁА-Я]/.test(match.value)
+            row.insertCell(2).innerHTML = /[а-яёЁА-Я]/.test(match.value)
               ? `<span class="highlight">${match.value}</span>`
               : match.value;
 
@@ -168,12 +123,12 @@
             row.insertCell(4).textContent = match.lineNumber;
           });
 
+          resultDiv.innerHTML = '';
           resultDiv.appendChild(table);
         } else {
-          resultDiv.innerHTML += '<p>Нет найденных вхождений.</p>';
+          resultDiv.innerHTML = '<p>Нет найденных вхождений.</p>';
         }
       } catch (error) {
-        // Обработка ошибок на клиенте
         console.error('Ошибка при обработке XML:', error);
         const resultDiv = document.getElementById('result');
         resultDiv.innerHTML = 'Произошла ошибка при обработке XML.';
