@@ -3,7 +3,7 @@
 <head>
   <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v31</title>
+  <title>XML Checker v32</title>
   <style>
     .error {
       color: red;
@@ -37,18 +37,18 @@
     const patterns = ['KEY1', 'KEY2'];
 
     function checkKeywords() {
-      checkXML(keywords, 'error', 'keywordTable');
+      checkXML(keywords, 'error', 'keywordTable', false);
     }
 
     function checkKeywords2() {
-      checkXML(keywords2, 'warning', 'keywordTable');
+      checkXML(keywords2, 'warning', 'keywordTable', false);
     }
 
     function checkPatterns() {
       checkXML(patterns, 'error', 'resultTable', true);
     }
 
-    function checkXML(keys, cssClass, tableId, isPattern = false) {
+    function checkXML(keys, cssClass, tableId, isPattern) {
       const fileInput = document.getElementById('xmlFileInput');
       const file = fileInput.files[0];
 
@@ -66,12 +66,10 @@
     }
 
     function processKeywords(xmlDoc, keys, cssClass, tableDiv) {
-      // Проверка ключевых слов
       keys.forEach(keyword => {
-        const keywordMatches = xmlDoc.evaluate(`//text()[contains(translate(., 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'), '${keyword}')]/..`, xmlDoc, null, XPathResult.ANY_TYPE, null);
+        const keywordMatches = xmlDoc.evaluate(`//*[contains(translate(., 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'), '${keyword}')]`, xmlDoc, null, XPathResult.ANY_TYPE, null);
         let keywordMatch = keywordMatches.iterateNext();
         while (keywordMatch) {
-          console.log(`Keyword Match: ${keywordMatch.textContent}`);
           displayResultTable(tableDiv, keywordMatch.textContent, `Найдено ключевое слово: ${keyword}`, cssClass);
           keywordMatch = keywordMatches.iterateNext();
         }
@@ -79,16 +77,13 @@
     }
 
     function processPatterns(xmlDoc, patterns, cssClass, tableDiv) {
-      // Проверка значений ключей
       patterns.forEach(pattern => {
         const patternMatches = xmlDoc.evaluate(`//*[@${pattern}]`, xmlDoc, null, XPathResult.ANY_TYPE, null);
         let patternMatch = patternMatches.iterateNext();
         while (patternMatch) {
           const value = patternMatch.getAttribute(pattern);
 
-          // Проверка наличия кирилицы в значении ключа "ключ=значение"
           if (/[\u0400-\u04FF]/.test(value)) {
-            console.log(`Pattern Match: ${value}`);
             displayResultTable(tableDiv, value.substring(0, 20), `Ошибка: Значение в ключе ${pattern} содержит кириллицу: ${value.substring(0, 20)}...`, 'error');
           }
           patternMatch = patternMatches.iterateNext();
