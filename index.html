@@ -3,7 +3,7 @@
 <head>
   <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v5</title>
+  <title>XML Checker v6</title>
   <style>
     .highlight {
       color: red;
@@ -44,37 +44,72 @@
 
     function parseAndCheckXML(xmlData) {
       try {
-        const templateLists = [
-          { name: 'Шаблон 1', values: ['DEV', 'TST'] },
-          { name: 'Шаблон 2', values: ['функция="значение"'] },
-          { name: 'Шаблон 3', values: ['warning'] },
-          { name: 'Шаблон 4', values: ['NAME'] },
+        const dynamicTemplates = [
+          { name: 'Динамический 1', values: ['VAR1', 'VAR2'] },
+          { name: 'Динамический 2', values: ['VALUE1', 'VALUE2'] },
         ];
 
-        const ignoreList = ['test123', 'test36853'];
+        const warningTemplates = ['WARNING1', 'WARNING2'];
+        const nonLatinTemplates = ['NONLATIN1', 'NONLATIN2'];
+
         const resultDiv = document.getElementById('result');
 
-        function findMatchesWithContext(template, xmlData) {
+        function findMatchesWithDynamicContext(templates, xmlData) {
           const matches = [];
-          const value = template.values[0];
 
-          const lines = xmlData.split('\n');
+          templates.forEach(template => {
+            template.values.forEach(value => {
+              const regex = new RegExp(`${value}="(.*?)"`, 'g');
 
-          lines.forEach((line, lineNumber) => {
-            const startIndex = line.indexOf(value);
-            if (startIndex !== -1) {
-              const endIndex = startIndex + value.length;
-              const context = line.substring(startIndex - 10, endIndex + 10);
+              let match;
+              while ((match = regex.exec(xmlData)) !== null) {
+                const startIndex = Math.max(match.index - 10, 0);
+                const endIndex = Math.min(match.index + match[0].length + 10, xmlData.length);
+                const context = xmlData.substring(startIndex, endIndex);
 
-              // Добавляем дебаг-вывод
-              console.log(`Template: ${template.name}, Value: ${value}, Context: ${context}, LineNumber: ${lineNumber + 1}`);
+                if (context.includes(value)) {
+                  matches.push({ template: template.name, value, context });
+                }
+              }
+            });
+          });
 
-              if (
-                !ignoreList.some(word => context.includes(word)) &&
-                !(template.name === 'Шаблон 4' && /[^a-zA-Z]/.test(value)) &&
-                !(template.name === 'Шаблон 4' && /[а-яёЁА-Я]/.test(value))
-              ) {
-                matches.push({ template: template.name, value, context, lineNumber: lineNumber + 1 });
+          return matches;
+        }
+
+        function findMatchesWithWarnings(warningTemplates, xmlData) {
+          const matches = [];
+
+          warningTemplates.forEach(value => {
+            const regex = new RegExp(`${value}="(.*?)"`, 'g');
+
+            let match;
+            while ((match = regex.exec(xmlData)) !== null) {
+              const startIndex = Math.max(match.index - 10, 0);
+              const endIndex = Math.min(match.index + match[0].length + 10, xmlData.length);
+              const context = xmlData.substring(startIndex, endIndex);
+
+              matches.push({ template: 'Предупреждение', value, context });
+            }
+          });
+
+          return matches;
+        }
+
+        function findMatchesWithNonLatin(nonLatinTemplates, xmlData) {
+          const matches = [];
+
+          nonLatinTemplates.forEach(value => {
+            const regex = new RegExp(`${value}="(.*?)"`, 'g');
+
+            let match;
+            while ((match = regex.exec(xmlData)) !== null) {
+              const startIndex = Math.max(match.index - 10, 0);
+              const endIndex = Math.min(match.index + match[0].length + 10, xmlData.length);
+              const context = xmlData.substring(startIndex, endIndex);
+
+              if (/[^a-zA-Z]/.test(match[1])) {
+                matches.push({ template: 'Не латиница', value, context });
               }
             }
           });
@@ -82,13 +117,13 @@
           return matches;
         }
 
-        const matches = [];
+        const dynamicMatches = findMatchesWithDynamicContext(dynamicTemplates, xmlData);
+        const warningMatches = findMatchesWithWarnings(warningTemplates, xmlData);
+        const nonLatinMatches = findMatchesWithNonLatin(nonLatinTemplates, xmlData);
 
-        templateLists.forEach(template => {
-          matches.push(...findMatchesWithContext(template, xmlData));
-        });
+        const allMatches = [...dynamicMatches, ...warningMatches, ...nonLatinMatches];
 
-        if (matches.length > 0) {
+        if (allMatches.length > 0) {
           const table = document.createElement('table');
           table.innerHTML = `
             <tr>
@@ -96,31 +131,17 @@
               <th>Значение</th>
               <th>Вхождение</th>
               <th>Контекст</th>
-              <th>Номер строки</th>
             </tr>
           `;
 
-          matches.forEach(match => {
+          allMatches.forEach(match => {
             const row = table.insertRow();
             row.insertCell(0).textContent = match.template;
 
-            // Добавляем класс highlight, warning, или пустой в зависимости от шаблона
-            if (match.template === 'Шаблон 3') {
-              row.insertCell(1).innerHTML = `<span class="warning">${match.value}</span>`;
-            } else if (match.template === 'Шаблон 4') {
-              row.insertCell(1).innerHTML = /[а-яёЁА-Я]/.test(match.value)
-                ? `<span class="highlight">${match.value}</span>`
-                : match.value;
-            } else {
-              row.insertCell(1).textContent = match.value;
-            }
-
-            row.insertCell(2).innerHTML = /[а-яёЁА-Я]/.test(match.value)
-              ? `<span class="highlight">${match.value}</span>`
-              : match.value;
-
+            const highlightClass = match.template === 'Не латиница' ? 'highlight' : 'warning';
+            row.insertCell(1).innerHTML = `<span class="${highlightClass}">${match.value}</span>`;
+            row.insertCell(2).innerHTML = `<span class="${highlightClass}">${match.value}</span>`;
             row.insertCell(3).textContent = match.context;
-            row.insertCell(4).textContent = match.lineNumber;
           });
 
           resultDiv.innerHTML = '';
