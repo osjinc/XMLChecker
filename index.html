@@ -111,8 +111,7 @@
               if (
                 !ignoreList.some(word => context.includes(word)) &&
                 !(template.name === 'Шаблон 4' && !/^[a-zA-Z\s]*$/.test(context)) &&
-                !(template.name === 'Шаблон 4' && /NAME\s*=\s*""/.test(context)) &&
-                !(template.name === 'Шаблон 4' && /NAME\s*=\s*"[a-zA-Z]*"/.test(context))
+                !(template.name === 'Шаблон 4' && /^[a-zA-Z\s]*$/.test(context) && /NAME\s*=\s*""/.test(context))
               ) {
                 matches.push({ template: template.name, value, context, lineNumber: lineNumber + 1 });
               }
