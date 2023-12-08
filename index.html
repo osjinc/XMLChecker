@@ -10,6 +10,11 @@
       font-weight: bold;
     }
 
+    .warning {
+      color: orange;
+      font-weight: bold;
+    }
+
     table {
       border-collapse: collapse;
       width: 100%;
@@ -47,6 +52,7 @@
     const templateLists = [
       { name: 'Шаблон 1', values: ['DEV', 'TST'] },
       { name: 'Шаблон 2', values: ['функция="значение"'] },
+      { name: 'Шаблон 3', values: ['warning'] }, // Добавлен третий шаблон
       // Добавьте другие списки шаблонов, если необходимо
     ];
 
@@ -134,7 +140,14 @@
           matches.forEach(match => {
             const row = table.insertRow();
             row.insertCell(0).textContent = match.template;
-            row.insertCell(1).textContent = match.value;
+
+            // Добавляем класс highlight или warning в зависимости от шаблона
+            if (match.template === 'Шаблон 3') {
+              row.insertCell(1).innerHTML = `<span class="warning">${match.value}</span>`;
+            } else {
+              row.insertCell(1).textContent = match.value;
+            }
+
             row.insertCell(2).innerHTML = `<span class="highlight">${match.value}</span>`;
             row.insertCell(3).textContent = match.context;
             row.insertCell(4).textContent = match.lineNumber;
