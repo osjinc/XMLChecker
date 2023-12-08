@@ -3,7 +3,7 @@
 <head>
   <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v29</title>
+  <title>XML Checker v30</title>
   <style>
     .error {
       color: red;
@@ -37,14 +37,17 @@
     const patterns = ['KEY1', 'KEY2'];
 
     function checkKeywords() {
+      console.log('Checking Keywords');
       checkXML(keywords, 'error');
     }
 
     function checkKeywords2() {
+      console.log('Checking Keywords2');
       checkXML(keywords2, 'warning');
     }
 
     function checkPatterns() {
+      console.log('Checking Patterns');
       const fileInput = document.getElementById('xmlFileInput');
       const file = fileInput.files[0];
 
@@ -77,6 +80,7 @@
         const keywordMatches = xmlDoc.evaluate(`//text()[contains(translate(., 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'), '${keyword}')]/..`, xmlDoc, null, XPathResult.ANY_TYPE, null);
         let keywordMatch = keywordMatches.iterateNext();
         while (keywordMatch) {
+          console.log(`Keyword Match: ${keywordMatch.textContent}`);
           displayResultTable(keywordTable, keywordMatch.textContent, `Найдено ключевое слово: ${keyword}`, cssClass);
           keywordMatch = keywordMatches.iterateNext();
         }
@@ -96,6 +100,7 @@
 
           // Проверка наличия кирилицы в значении ключа "ключ=значение"
           if (/[\u0400-\u04FF]/.test(value)) {
+            console.log(`Pattern Match: ${value}`);
             displayResultTable(resultTable, value.substring(0, 20), `Ошибка: Значение в ключе ${pattern} содержит кириллицу: ${value.substring(0, 20)}...`, 'error');
           }
           patternMatch = patternMatches.iterateNext();
@@ -127,13 +132,12 @@
 
       cell1.textContent = value;
       cell2.textContent = message;
-      row.appendChild(cell1);
-      row.appendChild(cell2);
-
       if (cssClass) {
         row.classList.add(cssClass);
       }
 
+      row.appendChild(cell1);
+      row.appendChild(cell2);
       tableDiv.appendChild(row);
     }
 
