@@ -3,7 +3,7 @@
 <head>
   <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v27</title>
+  <title>XML Checker v28</title>
   <style>
     .error {
       color: red;
@@ -13,32 +13,38 @@
       color: yellow;
       font-weight: bold;
     }
-    .result {
+    table {
+      border-collapse: collapse;
+      width: 100%;
       margin-top: 20px;
+    }
+    table, th, td {
+      border: 1px solid black;
     }
   </style>
 </head>
 <body>
   <input type="file" id="xmlFileInput" accept=".xml">
   <button onclick="checkKeywords()">Проверить ключевые слова</button>
-  <button onclick="checkKeyValues()">Проверить значения ключей</button>
-  <button onclick="checkKeywords2()">Проверить ключевые слова2</button>
-  <div id="resultTable" class="result"></div>
+  <button onclick="checkKeywords2()">Проверить ключевые слова (warning)</button>
+  <button onclick="checkPatterns()">Проверить значения ключей</button>
+  <div id="keywordTable"></div>
+  <div id="resultTable"></div>
 
   <script>
-    function checkKeywords() {
-      checkXML(['TST', 'DEV', 'secure'], 'KEY1', 'KEY2', []);
-    }
+    const keywords = ['TST', 'DEV', 'secure'];
+    const keywords2 = ['key3', 'key4'];
+    const patterns = ['KEY1', 'KEY2'];
 
-    function checkKeyValues() {
-      checkXML([], 'KEY1', 'KEY2', ['key3', 'key4']);
+    function checkKeywords() {
+      checkXML(keywords, 'error');
     }
 
     function checkKeywords2() {
-      checkXML(['key3', 'key4'], '', '', []);
+      checkXML(keywords2, 'warning');
     }
 
-    function checkXML(keywords, pattern1, pattern2, keywords2) {
+    function checkPatterns() {
       const fileInput = document.getElementById('xmlFileInput');
       const file = fileInput.files[0];
 
@@ -47,48 +53,52 @@
         return;
       }
 
-      readFile(file, 'windows-1251', xmlDoc => processXML(xmlDoc, keywords, pattern1, pattern2, keywords2));
+      readFile(file, 'windows-1251', xmlDoc => processPatterns(xmlDoc));
     }
 
-    function processXML(xmlDoc, keywords, pattern1, pattern2, keywords2) {
-      const resultTable = document.getElementById('resultTable');
-      resultTable.innerHTML = '';
+    function checkXML(keywords, cssClass) {
+      const fileInput = document.getElementById('xmlFileInput');
+      const file = fileInput.files[0];
+
+      if (!file) {
+        displayResult('Выберите XML-файл.');
+        return;
+      }
+
+      readFile(file, 'windows-1251', xmlDoc => processKeywords(xmlDoc, keywords, cssClass));
+    }
+
+    function processKeywords(xmlDoc, keywords, cssClass) {
+      const keywordTable = document.getElementById('keywordTable');
+      keywordTable.innerHTML = '';
 
       // Проверка ключевых слов
       keywords.forEach(keyword => {
         const keywordMatches = xmlDoc.evaluate(`//text()[contains(translate(., 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'), '${keyword}')]/..`, xmlDoc, null, XPathResult.ANY_TYPE, null);
         let keywordMatch = keywordMatches.iterateNext();
         while (keywordMatch) {
-          displayResultTable(resultTable, keywordMatch.textContent, `Найдено ключевое слово: ${keyword}`, 'error');
+          displayResultTable(keywordTable, keywordMatch.textContent, `Найдено ключевое слово: ${keyword}`, cssClass);
           keywordMatch = keywordMatches.iterateNext();
         }
       });
+    }
+
+    function processPatterns(xmlDoc) {
+      const resultTable = document.getElementById('resultTable');
+      resultTable.innerHTML = '';
 
       // Проверка значений ключей
-      if (pattern1 || pattern2) {
-        const patterns = [pattern1, pattern2];
-        patterns.forEach(pattern => {
-          const patternMatches = xmlDoc.evaluate(`//*[@${pattern}]`, xmlDoc, null, XPathResult.ANY_TYPE, null);
-          let patternMatch = patternMatches.iterateNext();
-          while (patternMatch) {
-            const value = patternMatch.getAttribute(pattern);
+      patterns.forEach(pattern => {
+        const patternMatches = xmlDoc.evaluate(`//*[@${pattern}]`, xmlDoc, null, XPathResult.ANY_TYPE, null);
+        let patternMatch = patternMatches.iterateNext();
+        while (patternMatch) {
+          const value = patternMatch.getAttribute(pattern);
 
-            // Проверка наличия кирилицы в значении ключа "ключ=значение"
-            if (/[\u0400-\u04FF]/.test(value)) {
-              displayResultTable(resultTable, value.substring(0, 20), `Ошибка: Значение в ключе ${pattern} содержит кириллицу: ${value.substring(0, 20)}...`, 'error');
-            }
-            patternMatch = patternMatches.iterateNext();
+          // Проверка наличия кирилицы в значении ключа "ключ=значение"
+          if (/[\u0400-\u04FF]/.test(value)) {
+            displayResultTable(resultTable, value.substring(0, 20), `Ошибка: Значение в ключе ${pattern} содержит кириллицу: ${value.substring(0, 20)}...`, 'error');
           }
-        });
-      }
-
-      // Проверка ключевых слов2
-      keywords2.forEach(keyword => {
-        const keywordMatches = xmlDoc.evaluate(`//text()[contains(translate(., 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'), '${keyword}')]/..`, xmlDoc, null, XPathResult.ANY_TYPE, null);
-        let keywordMatch = keywordMatches.iterateNext();
-        while (keywordMatch) {
-          displayResultTable(resultTable, keywordMatch.textContent, `Предупреждение: Найдено ключевое слово2: ${keyword}`, 'warning');
-          keywordMatch = keywordMatches.iterateNext();
+          patternMatch = patternMatches.iterateNext();
         }
       });
     }
@@ -110,11 +120,18 @@
       reader.readAsText(file, encoding);
     }
 
-    function displayResultTable(resultDiv, value, message, cssClass) {
-      const divElement = document.createElement('div');
-      divElement.classList.add(cssClass);
-      divElement.textContent = `Значение: ${value.substring(0, 20)}... | ${message}`;
-      resultDiv.appendChild(divElement);
+    function displayResultTable(tableDiv, value, message, cssClass) {
+      const row = document.createElement('div');
+      const cell1 = document.createElement('div');
+      const cell2 = document.createElement('div');
+
+      cell1.textContent = value;
+      cell2.textContent = message;
+      row.appendChild(cell1);
+      row.appendChild(cell2);
+
+      row.classList.add(cssClass);
+      tableDiv.appendChild(row);
     }
 
     function displayResult(message) {
