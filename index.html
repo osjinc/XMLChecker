@@ -9,13 +9,43 @@
       color: red;
       font-weight: bold;
     }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+    }
+
+    th, td {
+      border: 1px solid #dddddd;
+      text-align: left;
+      padding: 8px;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    #ignoreList {
+      display: none;
+    }
+
+    #listsContainer {
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
   <input type="file" id="xmlFileInput" accept=".xml">
-  <input type="text" id="ignoreList" placeholder="Список игнорируемых слов (через запятую)" value="test123, test36853">
   <button onclick="checkXML()">Проверить XML</button>
   <div id="result"></div>
+  <div id="listsContainer">
+    <h3>Список игнорируемых слов:</h3>
+    <input type="text" id="ignoreList" placeholder="Список игнорируемых слов (через запятую)" value="test123, test36853">
+    <h3>Список шаблонов:</h3>
+    <ul>
+      <li>Шаблон 1: DEV, TST</li>
+    </ul>
+  </div>
 
   <script>
     function checkXML() {
@@ -67,27 +97,37 @@
 
         const matches1 = findMatchesWithContext(regex1, xmlData);
 
-        // Отображение результатов на странице
+        // Отображение результатов на странице в виде таблицы
         const resultDiv = document.getElementById('result');
-        resultDiv.innerHTML = `
-          <p>Найденные вхождения (шаблон 1): ${displayMatches(matches1, regex1)}</p>
-        `;
+        resultDiv.innerHTML = '<h2>Результаты:</h2>';
+        
+        if (matches1.length > 0) {
+          const table = document.createElement('table');
+          table.innerHTML = `
+            <tr>
+              <th>Шаблон</th>
+              <th>Вхождение</th>
+              <th>Контекст</th>
+            </tr>
+          `;
+
+          matches1.forEach(match => {
+            const row = table.insertRow();
+            row.insertCell(0).textContent = 'Шаблон 1';
+            row.insertCell(1).innerHTML = `<span class="highlight">${match.value}</span>`;
+            row.insertCell(2).textContent = match.context;
+          });
+
+          resultDiv.appendChild(table);
+        } else {
+          resultDiv.innerHTML += '<p>Нет найденных вхождений.</p>';
+        }
       } catch (error) {
         // Обработка ошибок на клиенте
         console.error('Ошибка при обработке XML:', error);
         const resultDiv = document.getElementById('result');
         resultDiv.innerHTML = 'Произошла ошибка при обработке XML.';
       }
-    }
-
-    function displayMatches(matches, regex) {
-      return matches.map(match => {
-        const index = match.context.indexOf(match.value);
-        const before = match.context.substring(0, index);
-        const after = match.context.substring(index + match.value.length);
-        const highlighted = `<span class="highlight">${match.value}</span>`;
-        return `${before}${highlighted}${after} (Шаблон: ${regex.source})`;
-      }).join(', ');
     }
   </script>
 </body>
