@@ -52,7 +52,8 @@
     const templateLists = [
       { name: 'Шаблон 1', values: ['DEV', 'TST'] },
       { name: 'Шаблон 2', values: ['функция="значение"'] },
-      { name: 'Шаблон 3', values: ['warning'] }, // Добавлен третий шаблон
+      { name: 'Шаблон 3', values: ['warning'] },
+      { name: 'Шаблон 4', values: ['NAME'] }, // Добавлен четвертый шаблон
       // Добавьте другие списки шаблонов, если необходимо
     ];
 
@@ -141,9 +142,15 @@
             const row = table.insertRow();
             row.insertCell(0).textContent = match.template;
 
-            // Добавляем класс highlight или warning в зависимости от шаблона
+            // Добавляем класс highlight, warning, или пустой в зависимости от шаблона
             if (match.template === 'Шаблон 3') {
               row.insertCell(1).innerHTML = `<span class="warning">${match.value}</span>`;
+            } else if (match.template === 'Шаблон 4') {
+              // Добавим проверку на наличие только латинских букв в поле NAME
+              const isValidName = /^[a-zA-Z]+$/.test(match.value);
+              row.insertCell(1).innerHTML = isValidName
+                ? match.value
+                : `<span class="highlight">${match.value}</span>`;
             } else {
               row.insertCell(1).textContent = match.value;
             }
