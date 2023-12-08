@@ -1,140 +1,142 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="windows-1251">
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v33</title>
+  <title>XML Checker v34</title>
   <style>
-    .error {
+    .highlight {
       color: red;
       font-weight: bold;
     }
+
     .warning {
-      color: yellow;
+      color: orange;
       font-weight: bold;
     }
+
     table {
       border-collapse: collapse;
       width: 100%;
-      margin-top: 20px;
     }
-    table, th, td {
-      border: 1px solid black;
+
+    th, td {
+      border: 1px solid #dddddd;
+      text-align: left;
+      padding: 8px;
+    }
+
+    th {
+      background-color: #f2f2f2;
+    }
+
+    #listsContainer {
+      margin-top: 20px;
     }
   </style>
 </head>
 <body>
   <input type="file" id="xmlFileInput" accept=".xml">
-  <button onclick="checkKeywordsAndPatterns()">Проверить ключевые слова и паттерны</button>
-  <div id="errorTable"></div>
-  <div id="warningTable"></div>
+  <button onclick="checkKeywords()">Проверить ключевые слова</button>
+  <button onclick="checkPatterns()">Проверить паттерны</button>
+  <div id="result"></div>
 
   <script>
-    const errorKeywords = ['TST', 'DEV', 'secure'];
-    const warningKeywords = ['key3', 'key4'];
-    const patterns = ['KEY1', 'KEY2'];
+    const keywords = ['TST', 'DEV', 'test'];
+    const patterns = ['функция="значение"', 'NAME'];
 
-    function checkKeywordsAndPatterns() {
+    function checkKeywords() {
+      checkXML(keywords, 'error');
+    }
+
+    function checkPatterns() {
+      checkXML(patterns, 'error');
+    }
+
+    function checkXML(templates, cssClass) {
       const fileInput = document.getElementById('xmlFileInput');
+      const resultDiv = document.getElementById('result');
+
       const file = fileInput.files[0];
 
       if (!file) {
-        displayResult('Выберите XML-файл.');
+        resultDiv.innerHTML = 'Выберите XML-файл.';
         return;
       }
 
-      readFile(file, 'windows-1251', xmlDoc => {
-        const errorTable = document.getElementById('errorTable');
-        const warningTable = document.getElementById('warningTable');
-        errorTable.innerHTML = '';
-        warningTable.innerHTML = '';
-        processKeywordsAndPatterns(xmlDoc, errorKeywords, warningKeywords, patterns, errorTable, warningTable);
-      });
-    }
-
-    function processKeywordsAndPatterns(xmlDoc, errorKeys, warningKeys, patterns, errorTable, warningTable) {
-      const content = xmlDoc.documentElement.textContent;
-
-      // Проверка ключевых слов для ошибок
-      errorKeys.forEach(keyword => {
-        const regex = new RegExp(`(.{0,15})(${keyword})(.{0,15})`, 'gi');
-        let match;
-        while ((match = regex.exec(content)) !== null) {
-          const contextBefore = match[1];
-          const keywordMatch = match[2];
-          const contextAfter = match[3];
-
-          displayResultTable(errorTable, keywordMatch, `Найдено ключевое слово (Ошибка): ${contextBefore}[${keywordMatch}]${contextAfter}`, 'error');
-        }
-      });
-
-      // Проверка ключевых слов для предупреждений
-      warningKeys.forEach(keyword => {
-        const regex = new RegExp(`(.{0,15})(${keyword})(.{0,15})`, 'gi');
-        let match;
-        while ((match = regex.exec(content)) !== null) {
-          const contextBefore = match[1];
-          const keywordMatch = match[2];
-          const contextAfter = match[3];
-
-          displayResultTable(warningTable, keywordMatch, `Найдено ключевое слово (Предупреждение): ${contextBefore}[${keywordMatch}]${contextAfter}`, 'warning');
-        }
-      });
-
-      // Проверка значений ключей для ошибок
-      patterns.forEach(pattern => {
-        const patternMatches = xmlDoc.evaluate(`//*[@${pattern}]`, xmlDoc, null, XPathResult.ANY_TYPE, null);
-        let patternMatch = patternMatches.iterateNext();
-        while (patternMatch) {
-          const value = patternMatch.getAttribute(pattern);
-
-          // Проверка наличия кирилицы в значении ключа "ключ=значение"
-          if (/[\u0400-\u04FF]/.test(value)) {
-            displayResultTable(errorTable, value.substring(0, 20), `Ошибка: Значение в ключе ${pattern} содержит кириллицу: ${value.substring(0, 20)}...`, 'error');
-          }
-          patternMatch = patternMatches.iterateNext();
-        }
-      });
-    }
-
-    function readFile(file, encoding, callback) {
       const reader = new FileReader();
 
       reader.onload = function (event) {
         const xmlData = event.target.result;
-        try {
-          const xmlDoc = new DOMParser().parseFromString(xmlData, 'text/xml');
-          callback(xmlDoc);
-        } catch (error) {
-          console.error('Ошибка при обработке XML:', error);
-          displayResult('Произошла ошибка при обработке XML.');
-        }
+        parseAndCheckXML(xmlData, templates, cssClass);
       };
 
-      reader.readAsText(file, encoding);
+      reader.readAsText(file);
     }
 
-    function displayResultTable(tableDiv, value, message, cssClass) {
-      const row = document.createElement('div');
-      const cell1 = document.createElement('div');
-      const cell2 = document.createElement('div');
+    function parseAndCheckXML(xmlData, templates, cssClass) {
+      try {
+        const matches = findMatchesWithContext(templates, xmlData);
 
-      cell1.textContent = value;
-      cell2.textContent = message;
-      if (cssClass) {
-        row.classList.add(cssClass);
+        // Отображение результатов на странице в виде таблицы
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = '<h2>Результаты:</h2>';
+
+        if (matches.length > 0) {
+          const table = document.createElement('table');
+          table.innerHTML = `
+            <tr>
+              <th>Значение</th>
+              <th>Вхождение</th>
+              <th>Контекст</th>
+              <th>Номер строки</th>
+            </tr>
+          `;
+
+          matches.forEach(match => {
+            const row = table.insertRow();
+            row.insertCell(0).innerHTML = `<span class="${cssClass}">${match.value}</span>`;
+            row.insertCell(1).innerHTML = `<span class="${cssClass}">${match.value}</span>`;
+            row.insertCell(2).textContent = match.context;
+            row.insertCell(3).textContent = match.lineNumber;
+          });
+
+          resultDiv.appendChild(table);
+        } else {
+          resultDiv.innerHTML += '<p>Нет найденных вхождений.</p>';
+        }
+      } catch (error) {
+        // Обработка ошибок на клиенте
+        console.error('Ошибка при обработке XML:', error);
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = 'Произошла ошибка при обработке XML.';
       }
-
-      row.appendChild(cell1);
-      row.appendChild(cell2);
-      tableDiv.appendChild(row);
     }
 
-    function displayResult(message) {
-      const resultDiv = document.getElementById('errorTable');
-      const pElement = document.createElement('p');
-      pElement.textContent = message;
-      resultDiv.appendChild(pElement);
+    // Функция для поиска вхождений с контекстом и игнорированием слов
+    function findMatchesWithContext(templates, xmlData) {
+      const matches = [];
+
+      templates.forEach(template => {
+        // Используем регулярное выражение для поиска вхождений
+        const regex = new RegExp(template, 'gi');
+        let match;
+        while ((match = regex.exec(xmlData)) !== null) {
+          const contextStart = Math.max(0, match.index - 10);
+          const contextEnd = Math.min(xmlData.length, match.index + match[0].length + 10);
+          const context = xmlData.substring(contextStart, contextEnd);
+
+          matches.push({ value: match[0], context, lineNumber: getLineNumber(xmlData, match.index) });
+        }
+      });
+
+      return matches;
+    }
+
+    // Функция для получения номера строки по индексу в тексте
+    function getLineNumber(text, index) {
+      const lines = text.substring(0, index).split('\n');
+      return lines.length;
     }
   </script>
 </body>
