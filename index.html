@@ -3,7 +3,7 @@
 <head>
   <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v7</title>
+  <title>XML Checker v8</title>
   <style>
     .highlight {
       color: red;
@@ -110,8 +110,9 @@
               const endIndex = Math.min(match.index + match[0].length + 10, xmlData.length);
               const context = xmlData.substring(startIndex, endIndex);
 
-              if (!/^[a-zA-Z\s]+$/.test(match[1])) {
-                matches.push({ template: 'Не латиница', value, context });
+              const valueInsideQuotes = match[1];
+              if (valueInsideQuotes && !/^[a-zA-Z\s]+$/.test(valueInsideQuotes)) {
+                matches.push({ template: 'Не латиница', value: valueInsideQuotes, context });
               }
             }
           });
