@@ -130,7 +130,10 @@
       row.appendChild(cell1);
       row.appendChild(cell2);
 
-      row.classList.add(cssClass);
+      if (cssClass) {
+        row.classList.add(cssClass);
+      }
+
       tableDiv.appendChild(row);
     }
 
