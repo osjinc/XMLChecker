@@ -86,20 +86,29 @@
         // Ваш код обработки XML-данных и проверки наличия ошибок
 
         // Функция для поиска вхождений с контекстом и игнорированием слов
-        function findMatchesWithContext(regex, xmlData) {
+        function findMatchesWithContext(templates, xmlData) {
           const matches = [];
-          let match;
 
-          while ((match = regex.exec(xmlData)) !== null) {
-            const startIndex = Math.max(match.index - 10, 0);
-            const endIndex = Math.min(match.index + match[0].length + 10, xmlData.length);
-            const context = xmlData.substring(startIndex, endIndex);
+          // Разбиваем текст на строки
+          const lines = xmlData.split('\n');
 
-            // Проверка на игнорируемые слова
-            if (!ignoreList.some(word => context.includes(word))) {
-              matches.push({ value: match[0], context });
-            }
-          }
+          templates.forEach(template => {
+            template.values.forEach(value => {
+              lines.forEach((line, lineNumber) => {
+                // Поиск вхождений в строке
+                const startIndex = line.indexOf(value);
+                if (startIndex !== -1) {
+                  const endIndex = startIndex + value.length;
+                  const context = line.substring(startIndex - 10, endIndex + 10);
+
+                  // Проверка на игнорируемые слова
+                  if (!ignoreList.some(word => context.includes(word))) {
+                    matches.push({ template: template.name, value, context, lineNumber: lineNumber + 1 });
+                  }
+                }
+              });
+            });
+          });
 
           return matches;
         }
@@ -108,32 +117,31 @@
         const resultDiv = document.getElementById('result');
         resultDiv.innerHTML = '<h2>Результаты:</h2>';
 
-        templateLists.forEach(templateList => {
-          const regex = new RegExp(templateList.values.join('|'), 'g');
-          const matches = findMatchesWithContext(regex, xmlData);
+        const matches = findMatchesWithContext(templateLists, xmlData);
 
-          if (matches.length > 0) {
-            const table = document.createElement('table');
-            table.innerHTML = `
-              <tr>
-                <th>${templateList.name}</th>
-                <th>Вхождение</th>
-                <th>Контекст</th>
-              </tr>
-            `;
+        if (matches.length > 0) {
+          const table = document.createElement('table');
+          table.innerHTML = `
+            <tr>
+              <th>Шаблон</th>
+              <th>Вхождение</th>
+              <th>Контекст</th>
+              <th>Номер строки</th>
+            </tr>
+          `;
 
-            matches.forEach(match => {
-              const row = table.insertRow();
-              row.insertCell(0).textContent = templateList.name;
-              row.insertCell(1).innerHTML = `<span class="highlight">${match.value}</span>`;
-              row.insertCell(2).textContent = match.context;
-            });
+          matches.forEach(match => {
+            const row = table.insertRow();
+            row.insertCell(0).textContent = match.template;
+            row.insertCell(1).innerHTML = `<span class="highlight">${match.value}</span>`;
+            row.insertCell(2).textContent = match.context;
+            row.insertCell(3).textContent = match.lineNumber;
+          });
 
-            resultDiv.appendChild(table);
-          } else {
-            resultDiv.innerHTML += `<p>Нет найденных вхождений для ${templateList.name}.</p>`;
-          }
-        });
+          resultDiv.appendChild(table);
+        } else {
+          resultDiv.innerHTML += '<p>Нет найденных вхождений.</p>';
+        }
       } catch (error) {
         // Обработка ошибок на клиенте
         console.error('Ошибка при обработке XML:', error);
