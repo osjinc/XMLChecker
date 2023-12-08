@@ -3,7 +3,7 @@
 <head>
   <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v13</title>
+  <title>XML Checker v14</title>
   <style>
     .error {
       color: red;
@@ -107,8 +107,9 @@
         let element = elements.iterateNext();
         while (element) {
           const value = element.getAttribute(key);
+          const truncatedValue = value.substring(0, 20); // Ограничение в 20 символов
           if (allowedCharsInValue && !allowedCharsInValue.test(value)) {
-            resultDiv.innerHTML += `<p class="${className}">Ошибка в значении ключа ${key}: ${value}</p>`;
+            resultDiv.innerHTML += `<p class="${className}">Ошибка в значении ключа ${key}: ${truncatedValue}</p>`;
           } else {
             const content = element.outerHTML.replace(/</g, '&lt;').replace(/>/g, '&gt;');
             resultDiv.innerHTML += `<table class="${className}">
@@ -117,7 +118,7 @@
                                         <th>Содержимое</th>
                                       </tr>
                                       <tr>
-                                        <td>${value}</td>
+                                        <td>${truncatedValue}</td>
                                         <td>${content}</td>
                                       </tr>
                                     </table>`;
