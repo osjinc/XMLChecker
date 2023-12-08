@@ -3,7 +3,7 @@
 <head>
   <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v18</title>
+  <title>XML Checker v19</title>
   <style>
     .error {
       color: red;
@@ -46,14 +46,14 @@
       const resultDiv = document.getElementById('result');
       resultDiv.innerHTML = '';
 
-      const patterns = ['TST', 'DEV'];
+      const keywords = ['TST', 'DEV', 'secure'];
 
-      patterns.forEach(pattern => {
-        const patternMatches = xmlDoc.evaluate(`//*[contains(text(), "${pattern}")]`, xmlDoc, null, XPathResult.ANY_TYPE, null);
-        let patternMatch = patternMatches.iterateNext();
-        while (patternMatch) {
-          displayResult(`Найдено ключевое слово: ${pattern}`, resultDiv, 'error');
-          patternMatch = patternMatches.iterateNext();
+      // Перебираем каждое ключевое слово
+      keywords.forEach(keyword => {
+        // Производим поиск вхождения каждого ключевого слова в тексте XML
+        const xmlText = new XMLSerializer().serializeToString(xmlDoc);
+        if (xmlText.indexOf(keyword) !== -1) {
+          displayResult(`Найдено ключевое слово: ${keyword}`, resultDiv, 'error');
         }
       });
     }
