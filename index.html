@@ -3,7 +3,7 @@
 <head>
   <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v23</title>
+  <title>XML Checker v24</title>
   <style>
     .error {
       color: red;
@@ -104,15 +104,8 @@
     }
 
     function displayResultTable(tableDiv, value, message, cssClass) {
-      const row = tableDiv.insertRow(-1);  // исправление тут
-      const cell1 = row.insertCell(0);
-      const cell2 = row.insertCell(1);
-
-      cell1.textContent = value;
-      cell2.textContent = message;
-      if (cssClass) {
-        row.classList.add(cssClass);
-      }
+      const row = `<tr class="${cssClass}"><td>${value}</td><td>${message}</td></tr>`;
+      tableDiv.innerHTML += row;
     }
 
     function displayResult(message) {
