@@ -113,8 +113,8 @@
               // Проверка на игнорируемые слова, пустое значение и содержание кириллицы
               if (
                 !ignoreList.some(word => context.includes(word)) &&
-                !(template.name === 'Шаблон 4' && /[^а-яА-ЯёЁ]/.test(value)) &&
-                !(template.name === 'Шаблон 4' && /^[а-яА-ЯёЁ\s]*$/.test(context) && /NAME\s*=\s*""/.test(context))
+                !(template.name === 'Шаблон 4' && /[^а-яёЁА-Я]/.test(value)) &&
+                !(template.name === 'Шаблон 4' && /^[а-яёЁА-Я\s]*$/.test(context) && /NAME\s*=\s*""/.test(context))
               ) {
                 matches.push({ template: template.name, value, context, lineNumber: lineNumber + 1 });
               }
@@ -154,14 +154,14 @@
             if (match.template === 'Шаблон 3') {
               row.insertCell(1).innerHTML = `<span class="warning">${match.value}</span>`;
             } else if (match.template === 'Шаблон 4') {
-              row.insertCell(1).innerHTML = /[^а-яА-ЯёЁ]/.test(match.value)
+              row.insertCell(1).innerHTML = /[^а-яёЁА-Я]/.test(match.value)
                 ? `<span class="highlight">${match.value}</span>`
                 : match.value;
             } else {
               row.insertCell(1).textContent = match.value;
             }
 
-            row.insertCell(2).innerHTML = /[^а-яА-ЯёЁ]/.test(match.value)
+            row.insertCell(2).innerHTML = /[^а-яёЁА-Я]/.test(match.value)
               ? `<span class="highlight">${match.value}</span>`
               : match.value;
 
