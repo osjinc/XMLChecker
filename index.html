@@ -1,9 +1,9 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v4</title>
+  <title>XML Checker v5</title>
   <style>
     .highlight {
       color: red;
@@ -39,7 +39,7 @@
         parseAndCheckXML(xmlData);
       };
 
-      reader.readAsText(file);
+      reader.readAsText(file, 'windows-1251');
     }
 
     function parseAndCheckXML(xmlData) {
