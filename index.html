@@ -3,7 +3,7 @@
 <head>
   <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v35</title>
+  <title>XML Checker v36</title>
   <style>
     .highlight {
       color: red;
@@ -36,6 +36,10 @@
     #resultConnectionNames {
       margin-top: 20px;
     }
+
+    #exportButton {
+      margin-top: 20px;
+    }
   </style>
 </head>
 <body>
@@ -44,6 +48,7 @@
   <div id="resultKeywords"></div>
   <div id="resultAttributes"></div>
   <div id="resultConnectionNames"></div>
+  <button id="exportButton" onclick="exportToTxt()">Создать отчет и экспорт в TXT</button>
 
   <script>
     let xmlDoc;
@@ -268,6 +273,45 @@
       } else {
         resultDiv.innerHTML += '<p>Нет найденных атрибутов CONNECTIONNAME.</p>';
       }
+    }
+
+    function exportToTxt() {
+      const resultKeywordsDiv = document.getElementById('resultKeywords');
+      const resultAttributesDiv = document.getElementById('resultAttributes');
+      const resultConnectionNamesDiv = document.getElementById('resultConnectionNames');
+
+      const resultKeywordsTxt = tableToTxt(resultKeywordsDiv);
+      const resultAttributesTxt = tableToTxt(resultAttributesDiv);
+      const resultConnectionNamesTxt = tableToTxt(resultConnectionNamesDiv);
+
+      // Combine all results into a single string
+      const finalResult = `=== Результаты ключевых слов ===\n\n${resultKeywordsTxt}\n\n=== Результаты атрибутов ===\n\n${resultAttributesTxt}\n\n=== Результаты CONNECTIONNAME ===\n\n${resultConnectionNamesTxt}`;
+
+      // Create a Blob and trigger a download
+      const blob = new Blob([finalResult], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = 'report.txt';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+    }
+
+    function tableToTxt(tableDiv) {
+      const table = tableDiv.querySelector('table');
+      const rows = table.querySelectorAll('tr');
+
+      let result = '';
+
+      rows.forEach(row => {
+        const cells = row.querySelectorAll('th, td');
+        cells.forEach(cell => {
+          result += cell.textContent.trim() + '\t';
+        });
+        result += '\n';
+      });
+
+      return result;
     }
   </script>
 </body>
