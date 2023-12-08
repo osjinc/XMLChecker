@@ -3,7 +3,7 @@
 <head>
   <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v14</title>
+  <title>XML Checker v15</title>
   <style>
     .error {
       color: red;
@@ -25,19 +25,22 @@
 </head>
 <body>
   <input type="file" id="xmlFileInput" accept=".xml">
-  <button onclick="checkXML()">Проверить XML</button>
+  <button onclick="checkKeywords()">Проверить ключевые слова</button>
   <div id="result1"></div>
+  
+  <button onclick="checkKeyValue()">Проверить ключ="значение"</button>
   <div id="result2"></div>
+  
+  <button onclick="checkRecommendedKeyValue()">Проверить рекомендуемые ключ="значение"</button>
   <div id="result3"></div>
+
+  <button onclick="checkLatinKeyValue()">Проверить латинские символы в значении ключа</button>
   <div id="result4"></div>
 
   <script>
-    function checkXML() {
+    function checkKeywords() {
       const fileInput = document.getElementById('xmlFileInput');
       const resultDiv1 = document.getElementById('result1');
-      const resultDiv2 = document.getElementById('result2');
-      const resultDiv3 = document.getElementById('result3');
-      const resultDiv4 = document.getElementById('result4');
 
       const file = fileInput.files[0];
 
@@ -50,38 +53,21 @@
 
       reader.onload = function (event) {
         const xmlData = event.target.result;
-        console.log('XML Data:', xmlData);
-        parseAndCheckXML(xmlData);
+        parseAndCheckKeywords(xmlData);
       };
 
       reader.readAsText(file, 'windows-1251');
     }
 
-    function parseAndCheckXML(xmlData) {
-      console.log('Parsing and checking XML...');
+    function parseAndCheckKeywords(xmlData) {
       try {
         const xmlDoc = new DOMParser().parseFromString(xmlData, 'text/xml');
         const resultDiv1 = document.getElementById('result1');
-        const resultDiv2 = document.getElementById('result2');
-        const resultDiv3 = document.getElementById('result3');
-        const resultDiv4 = document.getElementById('result4');
 
         resultDiv1.innerHTML = '';
-        resultDiv2.innerHTML = '';
-        resultDiv3.innerHTML = '';
-        resultDiv4.innerHTML = '';
 
         // Шаблон 1: Проверка наличия ключевых слов
         checkForKeywords(xmlDoc, ['TST', 'DEV'], resultDiv1);
-
-        // Шаблон 2: Проверка полного совпадения ключ="значение"
-        checkForKeyValue(xmlDoc, ['KEY1', 'KEY2'], resultDiv2);
-
-        // Шаблон 3: Проверка рекомендуемых ключ="значение"
-        checkForKeyValue(xmlDoc, ['RECOMMENDED1', 'RECOMMENDED2'], resultDiv3, 'warning');
-
-        // Шаблон 4: Проверка значения ключа на латиницу, "_", "-", "$", а также пустое значение
-        checkForKeyValue(xmlDoc, ['KEY'], resultDiv4, 'error', /^[a-zA-Z0-9_$-]*$/);
 
       } catch (error) {
         console.error('Ошибка при обработке XML:', error);
@@ -101,29 +87,132 @@
       });
     }
 
-    function checkForKeyValue(xmlDoc, keys, resultDiv, className = 'error', allowedCharsInValue) {
+    function checkKeyValue() {
+      const fileInput = document.getElementById('xmlFileInput');
+      const resultDiv2 = document.getElementById('result2');
+
+      const file = fileInput.files[0];
+
+      if (!file) {
+        resultDiv2.innerHTML = 'Выберите XML-файл.';
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onload = function (event) {
+        const xmlData = event.target.result;
+        parseAndCheckKeyValue(xmlData);
+      };
+
+      reader.readAsText(file, 'windows-1251');
+    }
+
+    function parseAndCheckKeyValue(xmlData) {
+      try {
+        const xmlDoc = new DOMParser().parseFromString(xmlData, 'text/xml');
+        const resultDiv2 = document.getElementById('result2');
+
+        resultDiv2.innerHTML = '';
+
+        // Шаблон 2: Проверка полного совпадения ключ="значение"
+        checkForKeyValue(xmlDoc, ['KEY1', 'KEY2'], resultDiv2);
+
+      } catch (error) {
+        console.error('Ошибка при обработке XML:', error);
+        const resultDiv = document.getElementById('result2');
+        resultDiv.innerHTML = 'Произошла ошибка при обработке XML.';
+      }
+    }
+
+    function checkRecommendedKeyValue() {
+      const fileInput = document.getElementById('xmlFileInput');
+      const resultDiv3 = document.getElementById('result3');
+
+      const file = fileInput.files[0];
+
+      if (!file) {
+        resultDiv3.innerHTML = 'Выберите XML-файл.';
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onload = function (event) {
+        const xmlData = event.target.result;
+        parseAndCheckRecommendedKeyValue(xmlData);
+      };
+
+      reader.readAsText(file, 'windows-1251');
+    }
+
+    function parseAndCheckRecommendedKeyValue(xmlData) {
+      try {
+        const xmlDoc = new DOMParser().parseFromString(xmlData, 'text/xml');
+        const resultDiv3 = document.getElementById('result3');
+
+        resultDiv3.innerHTML = '';
+
+        // Шаблон 3: Проверка рекомендуемых ключ="значение"
+        checkForKeyValue(xmlDoc, ['RECOMMENDED1', 'RECOMMENDED2'], resultDiv3, 'warning');
+
+      } catch (error) {
+        console.error('Ошибка при обработке XML:', error);
+        const resultDiv = document.getElementById('result3');
+        resultDiv.innerHTML = 'Произошла ошибка при обработке XML.';
+      }
+    }
+
+    function checkLatinKeyValue() {
+      const fileInput = document.getElementById('xmlFileInput');
+      const resultDiv4 = document.getElementById('result4');
+
+      const file = fileInput.files[0];
+
+      if (!file) {
+        resultDiv4.innerHTML = 'Выберите XML-файл.';
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onload = function (event) {
+        const xmlData = event.target.result;
+        parseAndCheckLatinKeyValue(xmlData);
+      };
+
+      reader.readAsText(file, 'windows-1251');
+    }
+
+    function parseAndCheckLatinKeyValue(xmlData) {
+      try {
+        const xmlDoc = new DOMParser().parseFromString(xmlData, 'text/xml');
+        const resultDiv4 = document.getElementById('result4');
+
+        resultDiv4.innerHTML = '';
+
+        // Шаблон 4: Проверка значения ключа на латиницу, "_", "-", "$", а также пустое значение
+        checkForKeyValue(xmlDoc, ['KEY'], resultDiv4, 'error', /^[a-zA-Z0-9_$-]*$/);
+
+      } catch (error) {
+        console.error('Ошибка при обработке XML:', error);
+        const resultDiv = document.getElementById('result4');
+        resultDiv.innerHTML = 'Произошла ошибка при обработке XML.';
+      }
+    }
+
+    function checkForKeyValue(xmlDoc, keys, resultDiv, cssClass, valuePattern) {
       keys.forEach(key => {
-        const elements = xmlDoc.evaluate(`//*[@${key}]`, xmlDoc, null, XPathResult.ANY_TYPE, null);
-        let element = elements.iterateNext();
-        while (element) {
-          const value = element.getAttribute(key);
-          const truncatedValue = value.substring(0, 20); // Ограничение в 20 символов
-          if (allowedCharsInValue && !allowedCharsInValue.test(value)) {
-            resultDiv.innerHTML += `<p class="${className}">Ошибка в значении ключа ${key}: ${truncatedValue}</p>`;
+        const keyValues = xmlDoc.evaluate(`//*[@${key}]`, xmlDoc, null, XPathResult.ANY_TYPE, null);
+        let keyValue = keyValues.iterateNext();
+        while (keyValue) {
+          const value = keyValue.getAttribute(key);
+          if (valuePattern && !valuePattern.test(value)) {
+            resultDiv.innerHTML += `<p class="${cssClass}">Найдено значение с ошибкой в ключе ${key}: ${value.substring(0, 20)}...</p>`;
           } else {
-            const content = element.outerHTML.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-            resultDiv.innerHTML += `<table class="${className}">
-                                      <tr>
-                                        <th>Значение</th>
-                                        <th>Содержимое</th>
-                                      </tr>
-                                      <tr>
-                                        <td>${truncatedValue}</td>
-                                        <td>${content}</td>
-                                      </tr>
-                                    </table>`;
+            resultDiv.innerHTML += `<p class="${cssClass}">Найдено значение в ключе ${key}: ${value.substring(0, 20)}...</p>`;
           }
-          element = elements.iterateNext();
+          keyValue = keyValues.iterateNext();
         }
       });
     }
