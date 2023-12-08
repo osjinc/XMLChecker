@@ -3,7 +3,7 @@
 <head>
   <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v1</title>
+  <title>XML Checker v2</title>
   <style>
     .highlight {
       color: red;
@@ -113,9 +113,8 @@
               // Проверка на игнорируемые слова, пустое значение и содержание кириллицы
               if (
                 !ignoreList.some(word => context.includes(word)) &&
-                !(template.name === 'Шаблон 4' && /[^а-яёЁА-Я]/.test(value)) &&
-                !(template.name === 'Шаблон 4' && /^[а-яёЁА-Я\s]*$/.test(context) && /NAME\s*=\s*""/.test(context))
-              ) {
+                !(template.name === 'Шаблон 4' && /[а-яёЁА-Я]/.test(value))
+
                 matches.push({ template: template.name, value, context, lineNumber: lineNumber + 1 });
               }
             }
