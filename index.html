@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>XML Checker</title>
   <style>
@@ -85,7 +85,7 @@
         parseAndCheckXML(xmlData, ignoreList);
       };
 
-      reader.readAsText(file);
+      reader.readAsText(file, 'windows-1251'); // Указываем кодировку windows-1251
     }
 
     function parseAndCheckXML(xmlData, ignoreList) {
@@ -146,8 +146,8 @@
             if (match.template === 'Шаблон 3') {
               row.insertCell(1).innerHTML = `<span class="warning">${match.value}</span>`;
             } else if (match.template === 'Шаблон 4') {
-              // Добавим проверку на наличие только латинских букв в поле NAME
-              const isValidName = /^[a-zA-Z]+$/.test(match.value);
+              // Добавим проверку на полное совпадение имени поля NAME
+              const isValidName = match.value === 'NAME';
               row.insertCell(1).innerHTML = isValidName
                 ? match.value
                 : `<span class="highlight">${match.value}</span>`;
