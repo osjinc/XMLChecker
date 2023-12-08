@@ -107,6 +107,9 @@
               const endIndex = startIndex + value.length;
               const context = line.substring(startIndex - 10, endIndex + 10);
 
+              // Добавляем дебаг-вывод
+              console.log(`Template: ${template.name}, Value: ${value}, Context: ${context}, LineNumber: ${lineNumber + 1}`);
+
               // Проверка на игнорируемые слова, пустое значение и содержание не-латинских символов и точки
               if (
                 !ignoreList.some(word => context.includes(word)) &&
