@@ -108,9 +108,10 @@
                   const endIndex = startIndex + value.length;
                   const context = line.substring(startIndex - 10, endIndex + 10);
 
-                  // Проверка на игнорируемые слова, пустое значение и содержание кириллицы
+                  // Проверка на игнорируемые слова, пустое значение и содержание не-латинских символов и точки
                   if (
                     !ignoreList.some(word => context.includes(word)) &&
+                    !(template.name === 'Шаблон 4' && !/^[a-zA-Z\s]*$/.test(context)) &&
                     !(template.name === 'Шаблон 4' && /[а-яА-Я]/.test(context))
                   ) {
                     matches.push({ template: template.name, value, context, lineNumber: lineNumber + 1 });
@@ -148,8 +149,12 @@
             // Добавляем класс highlight, warning, или пустой в зависимости от шаблона
             if (match.template === 'Шаблон 3') {
               row.insertCell(1).innerHTML = `<span class="warning">${match.value}</span>`;
+            } else if (match.template === 'Шаблон 4') {
+              row.insertCell(1).innerHTML = /^[a-zA-Z\s]*$/.test(match.value)
+                ? match.value
+                : `<span class="highlight">${match.value}</span>`;
             } else {
-              row.insertCell(1).innerHTML = `<span class="highlight">${match.value}</span>`;
+              row.insertCell(1).textContent = match.value;
             }
 
             row.insertCell(2).innerHTML = `<span class="highlight">${match.value}</span>`;
