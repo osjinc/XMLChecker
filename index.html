@@ -146,8 +146,8 @@
             if (match.template === 'Шаблон 3') {
               row.insertCell(1).innerHTML = `<span class="warning">${match.value}</span>`;
             } else if (match.template === 'Шаблон 4') {
-              // Добавим проверку на полное совпадение имени поля NAME
-              const isValidName = match.value === 'NAME';
+              // Добавим проверку на полное совпадение имени поля NAME с использованием пробелов
+              const isValidName = /^[a-zA-Z\s]+$/.test(match.value);
               row.insertCell(1).innerHTML = isValidName
                 ? match.value
                 : `<span class="highlight">${match.value}</span>`;
