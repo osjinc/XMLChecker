@@ -31,17 +31,33 @@
   </style>
 </head>
 <body>
-  <input type="file" id="xmlFileInput" accept=".xml">
-  <button onclick="checkXML()">Проверить XML</button>
-  <div id="result"></div>
   <div id="listsContainer">
     <h3>Список шаблонов:</h3>
-    <div id="templateLists"></div>
+    <ul id="templateList"></ul>
     <h3>Список игнорируемых слов:</h3>
     <input type="text" id="ignoreList" placeholder="Список игнорируемых слов (через запятую)" value="test123, test36853">
   </div>
 
+  <input type="file" id="xmlFileInput" accept=".xml">
+  <button onclick="checkXML()">Проверить XML</button>
+  <div id="result"></div>
+
   <script>
+    // Список шаблонов
+    const templateLists = [
+      { name: 'Шаблон 1', values: ['DEV', 'TST'] },
+      { name: 'Шаблон 2', values: ['функция="значение"'] },
+      // Добавьте другие списки шаблонов, если необходимо
+    ];
+
+    // Отображение списков на странице
+    const templateListContainer = document.getElementById('templateList');
+    templateLists.forEach(templateList => {
+      const templateItem = document.createElement('li');
+      templateItem.textContent = `${templateList.name}: ${templateList.values.join(', ')}`;
+      templateListContainer.appendChild(templateItem);
+    });
+
     function checkXML() {
       const fileInput = document.getElementById('xmlFileInput');
       const ignoreListInput = document.getElementById('ignoreList');
@@ -68,11 +84,6 @@
     function parseAndCheckXML(xmlData, ignoreList) {
       try {
         // Ваш код обработки XML-данных и проверки наличия ошибок
-        const templateLists = [
-          { name: 'Шаблон 1', regex: /DEV|TST/g },
-          { name: 'Шаблон 2', regex: /функция="значение"/g },
-          // Добавьте другие списки шаблонов, если необходимо
-        ];
 
         // Функция для поиска вхождений с контекстом и игнорированием слов
         function findMatchesWithContext(regex, xmlData) {
@@ -98,7 +109,8 @@
         resultDiv.innerHTML = '<h2>Результаты:</h2>';
 
         templateLists.forEach(templateList => {
-          const matches = findMatchesWithContext(templateList.regex, xmlData);
+          const regex = new RegExp(templateList.values.join('|'), 'g');
+          const matches = findMatchesWithContext(regex, xmlData);
 
           if (matches.length > 0) {
             const table = document.createElement('table');
@@ -122,14 +134,6 @@
             resultDiv.innerHTML += `<p>Нет найденных вхождений для ${templateList.name}.</p>`;
           }
         });
-
-        // Отображение списка шаблонов
-        const templateListsContainer = document.getElementById('templateLists');
-        templateListsContainer.innerHTML = '<ul>';
-        templateLists.forEach(templateList => {
-          templateListsContainer.innerHTML += `<li>${templateList.name}</li>`;
-        });
-        templateListsContainer.innerHTML += '</ul>';
       } catch (error) {
         // Обработка ошибок на клиенте
         console.error('Ошибка при обработке XML:', error);
