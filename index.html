@@ -13,16 +13,11 @@
 </head>
 <body>
   <input type="file" id="xmlFileInput" accept=".xml">
-  <input type="text" id="ignoreList" placeholder="Список игнорируемых слов (через запятую)" value="test123, test36853">
-  <input type="text" id="checkList" placeholder="Слова для проверки (через запятую)" value="DEV, TST, функция">
-  <button onclick="checkXML()">Проверить XML</button>
   <div id="result"></div>
 
   <script>
     function checkXML() {
       const fileInput = document.getElementById('xmlFileInput');
-      const ignoreListInput = document.getElementById('ignoreList');
-      const checkListInput = document.getElementById('checkList');
       const resultDiv = document.getElementById('result');
 
       const file = fileInput.files[0];
@@ -36,20 +31,18 @@
 
       reader.onload = function (event) {
         const xmlData = event.target.result;
-        const ignoreList = ignoreListInput.value.split(',').map(word => word.trim());
-        const checkList = checkListInput.value.split(',').map(word => word.trim());
-        parseAndCheckXML(xmlData, ignoreList, checkList);
+        parseAndCheckXML(xmlData);
       };
 
       reader.readAsText(file);
     }
 
-    function parseAndCheckXML(xmlData, ignoreList, checkList) {
+    function parseAndCheckXML(xmlData) {
       try {
         // Ваш код обработки XML-данных и проверки наличия ошибок
-        const regexList = checkList.map(word => new RegExp(word, 'g'));
+        const regexList = [/DEV|TST/g, /функция="значение"/g];
 
-        // Функция для поиска вхождений с контекстом и игнорированием слов
+        // Функция для поиска вхождений с контекстом
         function findMatchesWithContext(regex, xmlData) {
           const matches = [];
           let match;
@@ -59,10 +52,7 @@
             const endIndex = Math.min(match.index + match[0].length + 10, xmlData.length);
             const context = xmlData.substring(startIndex, endIndex);
 
-            // Проверка на игнорируемые слова
-            if (!ignoreList.some(word => context.includes(word))) {
-              matches.push({ value: match[0], context });
-            }
+            matches.push({ value: match[0], context });
           }
 
           return matches;
@@ -71,7 +61,7 @@
         const allMatches = [];
         regexList.forEach((regex, index) => {
           const matches = findMatchesWithContext(regex, xmlData);
-          allMatches.push({ word: checkList[index], matches });
+          allMatches.push({ pattern: getPatternText(index), matches });
         });
 
         // Отображение результатов на странице
@@ -79,7 +69,7 @@
         resultDiv.innerHTML = '';
 
         allMatches.forEach(item => {
-          resultDiv.innerHTML += `<p>Найденные вхождения для "${item.word}": ${displayMatches(item.matches)}</p>`;
+          resultDiv.innerHTML += `<p>Найденные вхождения для "${item.pattern}": ${displayMatches(item.matches)}</p>`;
         });
       } catch (error) {
         // Обработка ошибок на клиенте
@@ -96,6 +86,17 @@
         const after = match.context.substring(index + match.value.length);
         return `${before}<span class="highlight">${match.value}</span>${after}`;
       }).join(', ');
+    }
+
+    function getPatternText(index) {
+      switch (index) {
+        case 0:
+          return 'DEV или TST';
+        case 1:
+          return 'функция="значение"';
+        default:
+          return '';
+      }
     }
   </script>
 </body>
