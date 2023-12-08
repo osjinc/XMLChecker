@@ -3,7 +3,7 @@
 <head>
   <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v24</title>
+  <title>XML Checker v25</title>
   <style>
     .error {
       color: red;
@@ -13,13 +13,8 @@
       color: yellow;
       font-weight: bold;
     }
-    table {
-      border-collapse: collapse;
-      width: 100%;
+    .result {
       margin-top: 20px;
-    }
-    table, th, td {
-      border: 1px solid black;
     }
   </style>
 </head>
@@ -27,7 +22,7 @@
   <input type="file" id="xmlFileInput" accept=".xml">
   <button onclick="checkXML()">Проверить XML</button>
   <div id="keywordTable"></div>
-  <div id="resultTable"></div>
+  <div id="resultTable" class="result"></div>
 
   <script>
     function checkXML() {
@@ -80,7 +75,7 @@
         const keywordMatches = xmlDoc.evaluate(`//text()[contains(translate(., 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'), '${keyword}')]/..`, xmlDoc, null, XPathResult.ANY_TYPE, null);
         let keywordMatch = keywordMatches.iterateNext();
         while (keywordMatch) {
-          displayResultTable(keywordTable, keywordMatch.textContent, `Найдено ключевое слово: ${keyword}`, 'error');
+          displayResultTable(resultTable, keywordMatch.textContent, `Предупреждение: Найдено ключевое слово2: ${keyword}`, 'warning');
           keywordMatch = keywordMatches.iterateNext();
         }
       });
@@ -103,9 +98,11 @@
       reader.readAsText(file, encoding);
     }
 
-    function displayResultTable(tableDiv, value, message, cssClass) {
-      const row = `<tr class="${cssClass}"><td>${value}</td><td>${message}</td></tr>`;
-      tableDiv.innerHTML += row;
+    function displayResultTable(resultDiv, value, message, cssClass) {
+      const divElement = document.createElement('div');
+      divElement.classList.add(cssClass);
+      divElement.textContent = `Значение: ${value.substring(0, 20)}... | ${message}`;
+      resultDiv.appendChild(divElement);
     }
 
     function displayResult(message) {
