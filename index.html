@@ -3,7 +3,7 @@
 <head>
   <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v8</title>
+  <title>XML Checker v9</title>
   <style>
     .highlight {
       color: red;
@@ -124,38 +124,42 @@
         const warningMatches = findMatchesWithWarnings(warningTemplates, xmlData);
         const nonLatinMatches = findMatchesWithNonLatin(nonLatinTemplates, xmlData);
 
-        const allMatches = [...dynamicMatches, ...warningMatches, ...nonLatinMatches];
+        displayMatches('Динамический', dynamicMatches);
+        displayMatches('Предупреждение', warningMatches);
+        displayMatches('Не латиница', nonLatinMatches);
 
-        if (allMatches.length > 0) {
-          const table = document.createElement('table');
-          table.innerHTML = `
-            <tr>
-              <th>Шаблон</th>
-              <th>Значение</th>
-              <th>Вхождение</th>
-              <th>Контекст</th>
-            </tr>
-          `;
-
-          allMatches.forEach(match => {
-            const row = table.insertRow();
-            row.insertCell(0).textContent = match.template;
-
-            const highlightClass = match.template === 'Не латиница' ? 'highlight' : 'warning';
-            row.insertCell(1).innerHTML = match.value ? `<span class="${highlightClass}">${match.value}</span>` : '-';
-            row.insertCell(2).innerHTML = match.value ? `<span class="${highlightClass}">${match.value}</span>` : '-';
-            row.insertCell(3).textContent = match.context;
-          });
-
-          resultDiv.innerHTML = '';
-          resultDiv.appendChild(table);
-        } else {
-          resultDiv.innerHTML = '<p>Нет найденных вхождений.</p>';
-        }
       } catch (error) {
         console.error('Ошибка при обработке XML:', error);
         const resultDiv = document.getElementById('result');
         resultDiv.innerHTML = 'Произошла ошибка при обработке XML.';
+      }
+    }
+
+    function displayMatches(title, matches) {
+      const resultDiv = document.getElementById('result');
+      if (matches.length > 0) {
+        const table = document.createElement('table');
+        table.innerHTML = `
+          <tr>
+            <th>${title}</th>
+            <th>Значение</th>
+            <th>Вхождение</th>
+            <th>Контекст</th>
+          </tr>
+        `;
+
+        matches.forEach(match => {
+          const row = table.insertRow();
+          row.insertCell(0).textContent = match.template;
+
+          const highlightClass = match.template === 'Не латиница' ? 'highlight' : 'warning';
+          row.insertCell(1).innerHTML = match.value ? `<span class="${highlightClass}">${match.value}</span>` : '-';
+          row.insertCell(2).innerHTML = match.value ? `<span class="${highlightClass}">${match.value}</span>` : '-';
+          row.insertCell(3).textContent = match.context;
+        });
+
+        resultDiv.innerHTML += '<hr>';
+        resultDiv.appendChild(table);
       }
     }
   </script>
