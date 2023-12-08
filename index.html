@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>XML Checker</title>
+</head>
+<body>
+  <input type="file" id="xmlFileInput" accept=".xml">
+  <button onclick="checkXML()">Проверить XML</button>
+  <div id="result"></div>
+
+  <script>
+    function checkXML() {
+      const fileInput = document.getElementById('xmlFileInput');
+      const resultDiv = document.getElementById('result');
+
+      const file = fileInput.files[0];
+
+      if (!file) {
+        resultDiv.innerHTML = 'Выберите XML-файл.';
+        return;
+      }
+
+      const reader = new FileReader();
+
+      reader.onload = function (event) {
+        const xmlData = event.target.result;
+        parseAndCheckXML(xmlData);
+      };
+
+      reader.readAsText(file);
+    }
+
+    function parseAndCheckXML(xmlData) {
+      try {
+        // Ваш код обработки XML-данных и проверки наличия ошибок
+        const regex1 = /DEV|TST/g;
+        const regex2 = /функция="значение"/g;
+
+        // Функция для поиска вхождений с контекстом
+        function findMatchesWithContext(regex, xmlData) {
+          const matches = [];
+          let match;
+
+          while ((match = regex.exec(xmlData)) !== null) {
+            const startIndex = Math.max(match.index - 10, 0);
+            const endIndex = Math.min(match.index + match[0].length + 10, xmlData.length);
+            const context = xmlData.substring(startIndex, endIndex);
+            matches.push({ value: match[0], context });
+          }
+
+          return matches;
+        }
+
+        const matches1 = findMatchesWithContext(regex1, xmlData);
+        const matches2 = findMatchesWithContext(regex2, xmlData);
+
+        // Отображение результатов на странице
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = `
+          <p>Найденные вхождения (шаблон 1): ${JSON.stringify(matches1)}</p>
+          <p>Найденные вхождения (шаблон 2): ${JSON.stringify(matches2)}</p>
+        `;
+      } catch (error) {
+        // Обработка ошибок на клиенте
+        console.error('Ошибка при обработке XML:', error);
+        const resultDiv = document.getElementById('result');
+        resultDiv.innerHTML = 'Произошла ошибка при обработке XML.';
+      }
+    }
+  </script>
+</body>
+</html>
