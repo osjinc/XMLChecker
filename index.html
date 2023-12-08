@@ -3,7 +3,7 @@
 <head>
   <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v19</title>
+  <title>XML Checker v20</title>
   <style>
     .error {
       color: red;
@@ -25,12 +25,12 @@
 </head>
 <body>
   <input type="file" id="xmlFileInput" accept=".xml">
-  <button onclick="checkKeywords()">Проверить ключевые слова</button>
-  <button onclick="checkKeyValues()">Проверить ключ="значение"</button>
-  <div id="result"></div>
+  <button onclick="checkXML()">Проверить XML</button>
+  <div id="keywordTable"></div>
+  <div id="resultTable"></div>
 
   <script>
-    function checkKeywords() {
+    function checkXML() {
       const fileInput = document.getElementById('xmlFileInput');
       const file = fileInput.files[0];
 
@@ -39,43 +39,27 @@
         return;
       }
 
-      readFile(file, 'windows-1251', checkForKeywords);
+      readFile(file, 'windows-1251', processXML);
     }
 
-    function checkForKeywords(xmlDoc) {
-      const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = '';
+    function processXML(xmlDoc) {
+      const keywordTable = document.getElementById('keywordTable');
+      const resultTable = document.getElementById('resultTable');
 
       const keywords = ['TST', 'DEV', 'secure'];
-
-      // Перебираем каждое ключевое слово
-      keywords.forEach(keyword => {
-        // Производим поиск вхождения каждого ключевого слова в тексте XML
-        const xmlText = new XMLSerializer().serializeToString(xmlDoc);
-        if (xmlText.indexOf(keyword) !== -1) {
-          displayResult(`Найдено ключевое слово: ${keyword}`, resultDiv, 'error');
-        }
-      });
-    }
-
-    function checkKeyValues() {
-      const fileInput = document.getElementById('xmlFileInput');
-      const file = fileInput.files[0];
-
-      if (!file) {
-        displayResult('Выберите XML-файл.');
-        return;
-      }
-
-      readFile(file, 'windows-1251', checkForKeyValues);
-    }
-
-    function checkForKeyValues(xmlDoc) {
-      const resultDiv = document.getElementById('result');
-      resultDiv.innerHTML = '';
-
       const patterns = ['KEY1', 'KEY2'];
 
+      // Проверка ключевых слов
+      keywords.forEach(keyword => {
+        const keywordMatches = xmlDoc.evaluate(`//text()[contains(translate(., 'abcdefghijklmnopqrstuvwxyz', 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'), '${keyword}')]/..`, xmlDoc, null, XPathResult.ANY_TYPE, null);
+        let keywordMatch = keywordMatches.iterateNext();
+        while (keywordMatch) {
+          displayResultTable(keywordTable, keywordMatch.textContent, `Найдено ключевое слово: ${keyword}`, 'error');
+          keywordMatch = keywordMatches.iterateNext();
+        }
+      });
+
+      // Проверка значений ключей
       patterns.forEach(pattern => {
         const patternMatches = xmlDoc.evaluate(`//*[@${pattern}]`, xmlDoc, null, XPathResult.ANY_TYPE, null);
         let patternMatch = patternMatches.iterateNext();
@@ -84,7 +68,7 @@
 
           // Проверка наличия кирилицы в значении ключа "ключ=значение"
           if (/[\u0400-\u04FF]/.test(value)) {
-            displayResult(`Ошибка: Значение в ключе ${pattern} содержит кириллицу: ${value.substring(0, 20)}...`, resultDiv, 'error');
+            displayResultTable(resultTable, value.substring(0, 20), `Ошибка: Значение в ключе ${pattern} содержит кириллицу: ${value.substring(0, 20)}...`, 'error');
           }
           patternMatch = patternMatches.iterateNext();
         }
@@ -108,13 +92,22 @@
       reader.readAsText(file, encoding);
     }
 
-    function displayResult(message, resultDiv, cssClass) {
-      resultDiv = resultDiv || document.getElementById('result');
+    function displayResultTable(tableDiv, value, message, cssClass) {
+      const row = tableDiv.insertRow(-1);
+      const cell1 = row.insertCell(0);
+      const cell2 = row.insertCell(1);
+
+      cell1.textContent = value;
+      cell2.textContent = message;
+      if (cssClass) {
+        row.classList.add(cssClass);
+      }
+    }
+
+    function displayResult(message) {
+      const resultDiv = document.getElementById('resultTable');
       const pElement = document.createElement('p');
       pElement.textContent = message;
-      if (cssClass) {
-        pElement.classList.add(cssClass);
-      }
       resultDiv.appendChild(pElement);
     }
   </script>
