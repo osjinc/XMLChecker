@@ -3,7 +3,7 @@
 <head>
   <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v12</title>
+  <title>XML Checker v13</title>
   <style>
     .error {
       color: red;
@@ -50,6 +50,7 @@
 
       reader.onload = function (event) {
         const xmlData = event.target.result;
+        console.log('XML Data:', xmlData);
         parseAndCheckXML(xmlData);
       };
 
@@ -57,6 +58,7 @@
     }
 
     function parseAndCheckXML(xmlData) {
+      console.log('Parsing and checking XML...');
       try {
         const xmlDoc = new DOMParser().parseFromString(xmlData, 'text/xml');
         const resultDiv1 = document.getElementById('result1');
