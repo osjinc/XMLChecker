@@ -7,12 +7,14 @@
 </head>
 <body>
   <input type="file" id="xmlFileInput" accept=".xml">
+  <input type="text" id="ignoreList" placeholder="Список игнорируемых слов (через запятую)">
   <button onclick="checkXML()">Проверить XML</button>
   <div id="result"></div>
 
   <script>
     function checkXML() {
       const fileInput = document.getElementById('xmlFileInput');
+      const ignoreListInput = document.getElementById('ignoreList');
       const resultDiv = document.getElementById('result');
 
       const file = fileInput.files[0];
@@ -26,19 +28,20 @@
 
       reader.onload = function (event) {
         const xmlData = event.target.result;
-        parseAndCheckXML(xmlData);
+        const ignoreList = ignoreListInput.value.split(',').map(word => word.trim());
+        parseAndCheckXML(xmlData, ignoreList);
       };
 
       reader.readAsText(file);
     }
 
-    function parseAndCheckXML(xmlData) {
+    function parseAndCheckXML(xmlData, ignoreList) {
       try {
         // Ваш код обработки XML-данных и проверки наличия ошибок
         const regex1 = /DEV|TST/g;
         const regex2 = /функция="значение"/g;
 
-        // Функция для поиска вхождений с контекстом
+        // Функция для поиска вхождений с контекстом и игнорированием слов
         function findMatchesWithContext(regex, xmlData) {
           const matches = [];
           let match;
@@ -47,7 +50,11 @@
             const startIndex = Math.max(match.index - 10, 0);
             const endIndex = Math.min(match.index + match[0].length + 10, xmlData.length);
             const context = xmlData.substring(startIndex, endIndex);
-            matches.push({ value: match[0], context });
+            
+            // Проверка на игнорируемые слова
+            if (!ignoreList.some(word => context.includes(word))) {
+              matches.push({ value: match[0], context });
+            }
           }
 
           return matches;
