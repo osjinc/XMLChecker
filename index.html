@@ -4,7 +4,7 @@
 <head>
     <meta charset="windows-1251">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XML Checker v38</title>
+    <title>XML Checker v39</title>
     <style>
         .highlight {
             color: red;
@@ -42,6 +42,12 @@
         #exportButton {
             margin-top: 20px;
         }
+
+        #loadingIndicator {
+            display: none;
+            margin-top: 10px;
+            color: blue;
+        }
     </style>
 </head>
 
@@ -52,12 +58,13 @@
     <div id="resultAttributes"></div>
     <div id="resultConnectionNames"></div>
     <button id="exportButton" onclick="exportToTxt()">Создать отчет и экспорт в TXT</button>
+    <div id="loadingIndicator">Анализ кода...</div>
 
     <script>
         let xmlDoc;
 
         const keywords = ['DEV', 'TST', 'test', 'ONDEMAND'].map(keyword => keyword.toLowerCase());
-        const ignoreList = ['Doom_dev', 'testappClasspath', 'ignore3'].map(word => word.toLowerCase());
+        const ignoreList = ['Dщom_dev', 'testappClasspath', 'ignore3'].map(word => word.toLowerCase());
         const keyDescriptions = {
             'dev': 'Режим разработки',
             'tst': 'Режим тестирования',
@@ -78,6 +85,7 @@
             const resultKeywordsDiv = document.getElementById('resultKeywords');
             const resultAttributesDiv = document.getElementById('resultAttributes');
             const resultConnectionNamesDiv = document.getElementById('resultConnectionNames');
+            const loadingIndicator = document.getElementById('loadingIndicator');
 
             const file = fileInput.files[0];
 
@@ -85,6 +93,13 @@
                 resultKeywordsDiv.innerHTML = 'Выберите XML-файл.';
                 return;
             }
+
+            // Очистка результатов
+            resultKeywordsDiv.innerHTML = '';
+            resultAttributesDiv.innerHTML = '';
+            resultConnectionNamesDiv.innerHTML = '';
+
+            loadingIndicator.style.display = 'block'; // Показать индикатор выполнения
 
             const reader = new FileReader();
 
@@ -94,6 +109,8 @@
                 parseAndCheckTerms(xmlData, keywords, resultKeywordsDiv, ignoreList);
                 checkForKeyValues(xmlData, resultAttributesDiv, attributesToCheck, emptyValueAttributesToCheck);
                 displayConnectionNames(xmlData, resultConnectionNamesDiv);
+
+                loadingIndicator.style.display = 'none'; // Скрыть индикатор выполнения
             };
 
             reader.readAsText(file, 'windows-1251');
