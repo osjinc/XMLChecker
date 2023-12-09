@@ -1,351 +1,347 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
-  <meta charset="windows-1251">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v37</title>
-  <style>
-    .highlight {
-      color: red;
-      font-weight: bold;
-    }
+    <meta charset="windows-1251">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>XML Checker v38</title>
+    <style>
+        .highlight {
+            color: red;
+            font-weight: bold;
+        }
 
-    .warning {
-      color: orange;
-      font-weight: bold;
-    }
+        .warning {
+            color: orange;
+            font-weight: bold;
+        }
 
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      margin-top: 20px;
-    }
+        table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-top: 20px;
+        }
 
-    th, td {
-      border: 1px solid #dddddd;
-      text-align: left;
-      padding: 8px;
-    }
+        th,
+        td {
+            border: 1px solid #dddddd;
+            text-align: left;
+            padding: 8px;
+        }
 
-    th {
-      background-color: #f2f2f2;
-    }
+        th {
+            background-color: #f2f2f2;
+        }
 
-    #resultKeywords,
-    #resultAttributes,
-    #resultConnectionNames {
-      margin-top: 20px;
-    }
+        #resultKeywords,
+        #resultAttributes,
+        #resultConnectionNames {
+            margin-top: 20px;
+        }
 
-    #exportButton {
-      margin-top: 20px;
-    }
-  </style>
+        #exportButton {
+            margin-top: 20px;
+        }
+    </style>
 </head>
+
 <body>
-  <input type="file" id="xmlFileInput" accept=".xml">
-  <button onclick="checkKeywords()">Проверить ключевые слова</button>
-  <div id="resultKeywords"></div>
-  <div id="resultAttributes"></div>
-  <div id="resultConnectionNames"></div>
-  <button id="exportButton" onclick="exportToTxt()">Создать отчет и экспорт в TXT</button>
+    <input type="file" id="xmlFileInput" accept=".xml">
+    <button onclick="checkKeywords()">Проверить ключевые слова</button>
+    <div id="resultKeywords"></div>
+    <div id="resultAttributes"></div>
+    <div id="resultConnectionNames"></div>
+    <button id="exportButton" onclick="exportToTxt()">Создать отчет и экспорт в TXT</button>
 
-  <script>
-    let xmlDoc;
+    <script>
+        let xmlDoc;
 
-    const keywords = ['DEV', 'TST', 'test', 'ONDEMAND'].map(keyword => keyword.toLowerCase());
-    const ignoreList = ['Dom_deev', 'testappClasspath', 'ignore3'].map(word => word.toLowerCase());
-    const keyDescriptions = {
-      'dev': 'Режим разработки',
-      'tst': 'Режим тестирования',
-      'test': 'Тестовый ключ',
-      'ondemand': 'Нет расписания?'
-    };
+        const keywords = ['DEV', 'TST', 'test', 'ONDEMAND'].map(keyword => keyword.toLowerCase());
+        const ignoreList = ['Doom_dev', 'testappClasspath', 'ignore3'].map(word => word.toLowerCase());
+        const keyDescriptions = {
+            'dev': 'Режим разработки',
+            'tst': 'Режим тестирования',
+            'test': 'Тестовый ключ',
+            'ondemand': 'Нет расписания?'
+        };
 
-    const attributesToCheck = [
-      { name: 'NAME', description: 'Имя атрибута NAME' },
-      { name: 'BUSINESSNAME', description: 'Имя атрибута BUSINESSNAME' },
-      { name: 'CONNECTIONNAME', description: 'Имя атрибута CONNECTIONNAME' },
-    ];
+        const attributesToCheck = [
+            { name: 'NAME', description: 'Имя атрибута NAME' },
+            { name: 'BUSINESSNAME', description: 'Имя атрибута BUSINESSNAME' },
+            { name: 'CONNECTIONNAME', description: 'Имя атрибута CONNECTIONNAME' },
+        ];
 
-    const emptyValueAttributesToCheck = ['CONNECTIONNAME'];
+        const emptyValueAttributesToCheck = ['CONNECTIONNAME'];
 
-    function checkKeywords() {
-      const fileInput = document.getElementById('xmlFileInput');
-      const resultKeywordsDiv = document.getElementById('resultKeywords');
-      const resultAttributesDiv = document.getElementById('resultAttributes');
-      const resultConnectionNamesDiv = document.getElementById('resultConnectionNames');
+        function checkKeywords() {
+            const fileInput = document.getElementById('xmlFileInput');
+            const resultKeywordsDiv = document.getElementById('resultKeywords');
+            const resultAttributesDiv = document.getElementById('resultAttributes');
+            const resultConnectionNamesDiv = document.getElementById('resultConnectionNames');
 
-      const file = fileInput.files[0];
+            const file = fileInput.files[0];
 
-      if (!file) {
-        resultKeywordsDiv.innerHTML = 'Выберите XML-файл.';
-        return;
-      }
-
-      const reader = new FileReader();
-
-      reader.onload = function (event) {
-        const xmlData = event.target.result;
-        xmlDoc = new DOMParser().parseFromString(xmlData, 'text/xml');
-        parseAndCheckTerms(xmlData, keywords, resultKeywordsDiv, ignoreList);
-        checkForKeyValues(xmlData, resultAttributesDiv, attributesToCheck, emptyValueAttributesToCheck);
-        displayConnectionNames(xmlData, resultConnectionNamesDiv);
-      };
-
-      reader.readAsText(file, 'windows-1251');
-    }
-
-    function findTermMatches(xmlData, terms, ignoreList) {
-    const matches = [];
-
-    terms.forEach(term => {
-        const termLower = term.toLowerCase();
-        let index = xmlData.toLowerCase().indexOf(termLower);
-        while (index !== -1) {
-        const contextStart = Math.max(0, index - 5);
-        const contextEnd = Math.min(xmlData.length, index + term.length + 20);
-        const context = xmlData.substring(contextStart, contextEnd);
-
-        let isIgnored = false;
-        ignoreList.forEach(ignoreWord => {
-            if (context.toLowerCase().includes(ignoreWord)) {
-            isIgnored = true;
+            if (!file) {
+                resultKeywordsDiv.innerHTML = 'Выберите XML-файл.';
+                return;
             }
-        });
 
-        if (!isIgnored) {
-            matches.push({ value: term, context, contextStart, contextEnd });
+            const reader = new FileReader();
+
+            reader.onload = function (event) {
+                const xmlData = event.target.result;
+                xmlDoc = new DOMParser().parseFromString(xmlData, 'text/xml');
+                parseAndCheckTerms(xmlData, keywords, resultKeywordsDiv, ignoreList);
+                checkForKeyValues(xmlData, resultAttributesDiv, attributesToCheck, emptyValueAttributesToCheck);
+                displayConnectionNames(xmlData, resultConnectionNamesDiv);
+            };
+
+            reader.readAsText(file, 'windows-1251');
         }
 
-        index = xmlData.toLowerCase().indexOf(termLower, index + 1);
+        function findTermMatches(xmlData, terms, ignoreList) {
+            const matches = [];
+
+            terms.forEach(term => {
+                const termLower = term.toLowerCase();
+                let index = xmlData.toLowerCase().indexOf(termLower);
+                while (index !== -1) {
+                    const contextStart = Math.max(0, index - 10);
+                    const contextEnd = Math.min(xmlData.length, index + term.length + 25);
+                    const context = xmlData.substring(contextStart, contextEnd);
+
+                    let isIgnored = false;
+                    ignoreList.forEach(ignoreWord => {
+                        if (context.toLowerCase().includes(ignoreWord)) {
+                            isIgnored = true;
+                        }
+                    });
+
+                    if (!isIgnored) {
+                        matches.push({ value: term, context, contextStart, contextEnd });
+                    }
+
+                    index = xmlData.toLowerCase().indexOf(termLower, index + 1);
+                }
+            });
+
+            return matches;
         }
-    });
 
-    return matches;
-    }
+        function parseAndCheckTerms(xmlData, terms, resultDiv, ignoreList) {
+            try {
+                const termMatches = findTermMatches(xmlData, terms, ignoreList);
+                resultDiv.innerHTML = '<h2>Результаты:</h2>';
 
-
-
-    function parseAndCheckTerms(xmlData, terms, resultDiv, ignoreList) {
-      try {
-        const termMatches = findTermMatches(xmlData, terms, ignoreList);
-        resultDiv.innerHTML = '<h2>Результаты:</h2>';
-
-        if (termMatches.length > 0) {
-          const table = document.createElement('table');
-          table.innerHTML = `
+                if (termMatches.length > 0) {
+                    const table = document.createElement('table');
+                    table.innerHTML = `
             <tr>
               <th>Значение</th>
               <th>Описание</th>
               <th>Контекст</th>
             </tr>
           `;
+                    termMatches.forEach(match => {
+                        const row = table.insertRow();
+                        const hasCyrillic = /[\u0400-\u04FF]/.test(match.value);
+                        const cssClass = hasCyrillic ? 'highlight' : '';
 
-          termMatches.forEach(match => {
-            const row = table.insertRow();
-            const hasCyrillic = /[\u0400-\u04FF]/.test(match.value);
-            const cssClass = hasCyrillic ? 'highlight' : '';
+                        const valueContext = hasCyrillic
+                            ? extractCyrillicContext(match)
+                            : match.context;
 
-            const valueContext = hasCyrillic
-              ? extractCyrillicContext(match)
-              : match.context;
+                        const description = keyDescriptions[match.value.toLowerCase()] || '';
 
-            const description = keyDescriptions[match.value.toLowerCase()] || '';
+                        row.insertCell(0).innerHTML = hasCyrillic
+                            ? `<span class="${cssClass}">${extractCyrillicValue(match.value)}</span>`
+                            : match.value;
 
-            row.insertCell(0).innerHTML = hasCyrillic
-              ? `<span class="${cssClass}">${extractCyrillicValue(match.value)}</span>`
-              : match.value;
+                        row.insertCell(1).textContent = description;
 
-            row.insertCell(1).textContent = description;
+                        row.insertCell(2).innerHTML = hasCyrillic
+                            ? `<span class="${cssClass}">${valueContext}</span>`
+                            : match.context;
+                    });
 
-            row.insertCell(2).innerHTML = hasCyrillic
-              ? `<span class="${cssClass}">${valueContext}</span>`
-              : match.context;
-          });
-
-          resultDiv.appendChild(table);
-        } else {
-          resultDiv.innerHTML += '<p>Нет найденных вхождений.</p>';
+                    resultDiv.appendChild(table);
+                } else {
+                    resultDiv.innerHTML += '<p>Нет найденных вхождений.</p>';
+                }
+            } catch (error) {
+                console.error('Ошибка при обработке XML:', error);
+                resultDiv.innerHTML = 'Произошла ошибка при обработке XML.';
+            }
         }
-      } catch (error) {
-        console.error('Ошибка при обработке XML:', error);
-        resultDiv.innerHTML = 'Произошла ошибка при обработке XML.';
-      }
-    }
 
-    function extractCyrillicValue(value) {
-      const cyrillicMatches = value.match(/[\u0400-\u04FF]+/g);
-      return cyrillicMatches ? cyrillicMatches.join('') : '';
-    }
+        function extractCyrillicValue(value) {
+            const cyrillicMatches = value.match(/[\u0400-\u04FF]+/g);
+            return cyrillicMatches ? cyrillicMatches.join('') : '';
+        }
 
-    function extractCyrillicContext(match) {
-      const startOffset = match.contextStart;
-      const endOffset = match.contextEnd;
+        function extractCyrillicContext(match) {
+            const startOffset = match.contextStart;
+            const endOffset = match.contextEnd;
 
-      const context = xmlDoc.documentElement.outerHTML.substring(startOffset, endOffset);
-      return context;
-    }
+            const context = xmlDoc.documentElement.outerHTML.substring(startOffset, endOffset);
+            return context;
+        }
 
-    function checkForKeyValues(xmlData, resultDiv, attributesToCheck, emptyValueAttributesToCheck) {
-      const attributeResults = [];
+        function checkForKeyValues(xmlData, resultDiv, attributesToCheck, emptyValueAttributesToCheck) {
+            const attributeResults = [];
 
-      attributesToCheck.forEach(attribute => {
-        const patternMatches = xmlDoc.evaluate(`//*[@${attribute.name}]`, xmlDoc, null, XPathResult.ANY_TYPE, null);
-        let patternMatch = patternMatches.iterateNext();
-        while (patternMatch) {
-          const attributeName = patternMatch.getAttribute(attribute.name);
-          const context = getContextAroundAttribute(patternMatch, attribute.name, 20);
+            attributesToCheck.forEach(attribute => {
+                const patternMatches = xmlDoc.evaluate(`//*[@${attribute.name}]`, xmlDoc, null, XPathResult.ANY_TYPE, null);
+                let patternMatch = patternMatches.iterateNext();
+                while (patternMatch) {
+                    const attributeName = patternMatch.getAttribute(attribute.name);
+                    const context = getContextAroundAttribute(patternMatch, attribute.name, 20);
 
-          if (/[\u0400-\u04FF]/.test(attributeName)) {
-            attributeResults.push({
-              description: attribute.description,
-              context: context,
+                    if (/[\u0400-\u04FF]/.test(attributeName)) {
+                        attributeResults.push({
+                            description: attribute.description,
+                            context: context,
+                        });
+                    }
+                    patternMatch = patternMatches.iterateNext();
+                }
             });
-          }
-          patternMatch = patternMatches.iterateNext();
+
+            emptyValueAttributesToCheck.forEach(attributeName => {
+                const patternMatches = xmlDoc.evaluate(`//*[@${attributeName}='']`, xmlDoc, null, XPathResult.ANY_TYPE, null);
+                let patternMatch = patternMatches.iterateNext();
+                while (patternMatch) {
+                    const context = getContextAroundAttribute(patternMatch, attributeName, 20);
+                    const description = `Пустое значение в атрибуте ${attributeName}`;
+                    attributeResults.push({
+                        description: description,
+                        context: context,
+                    });
+                    patternMatch = patternMatches.iterateNext();
+                }
+            });
+
+            displayAttributeResults(resultDiv, attributeResults);
         }
-      });
 
-      emptyValueAttributesToCheck.forEach(attributeName => {
-        const patternMatches = xmlDoc.evaluate(`//*[@${attributeName}='']`, xmlDoc, null, XPathResult.ANY_TYPE, null);
-        let patternMatch = patternMatches.iterateNext();
-        while (patternMatch) {
-          const context = getContextAroundAttribute(patternMatch, attributeName, 20);
-          const description = `Пустое значение в атрибуте ${attributeName}`;
-          attributeResults.push({
-            description: description,
-            context: context,
-          });
-          patternMatch = patternMatches.iterateNext();
+        function getContextAroundAttribute(patternMatch, attributeName, contextLength) {
+            const attributeNode = patternMatch.attributes.getNamedItem(attributeName);
+            if (!attributeNode) return '';
+
+            const contextStart = Math.max(0, attributeNode.startOffset - contextLength);
+            const contextEnd = Math.min(attributeNode.endOffset + contextLength, xmlDoc.documentElement.outerHTML.length);
+
+            const beforeContext = xmlDoc.documentElement.outerHTML.substring(contextStart, attributeNode.startOffset);
+            const afterContext = xmlDoc.documentElement.outerHTML.substring(attributeNode.endOffset, contextEnd);
+            const context = `${beforeContext}<span class="highlight">${attributeNode.name}="${attributeNode.value}"</span>${afterContext}`;
+
+            return context;
         }
-      });
 
-      displayAttributeResults(resultDiv, attributeResults);
-    }
-
-    function getContextAroundAttribute(patternMatch, attributeName, contextLength) {
-      const attributeNode = patternMatch.attributes.getNamedItem(attributeName);
-      if (!attributeNode) return '';
-
-      const contextStart = Math.max(0, attributeNode.startOffset - contextLength);
-      const contextEnd = Math.min(attributeNode.endOffset + contextLength, xmlDoc.documentElement.outerHTML.length);
-
-      const beforeContext = xmlDoc.documentElement.outerHTML.substring(contextStart, attributeNode.startOffset);
-      const afterContext = xmlDoc.documentElement.outerHTML.substring(attributeNode.endOffset, contextEnd);
-      const context = `${beforeContext}<span class="highlight">${attributeNode.name}="${attributeNode.value}"</span>${afterContext}`;
-
-      return context;
-    }
-
-    function displayAttributeResults(resultDiv, attributeResults) {
-      if (attributeResults.length > 0) {
-        const table = document.createElement('table');
-        table.innerHTML = `
+        function displayAttributeResults(resultDiv, attributeResults) {
+            if (attributeResults.length > 0) {
+                const table = document.createElement('table');
+                table.innerHTML = `
           <tr>
             <th>Описание</th>
             <th>Контекст</th>
           </tr>
         `;
 
-        attributeResults.forEach(result => {
-          const row = table.insertRow();
-          row.insertCell(0).textContent = result.description;
-          row.insertCell(1).innerHTML = result.context;
-        });
+                attributeResults.forEach(result => {
+                    const row = table.insertRow();
+                    row.insertCell(0).textContent = result.description;
+                    row.insertCell(1).innerHTML = result.context;
+                });
 
-        resultDiv.appendChild(table);
-      } else {
-        resultDiv.innerHTML += '<p>Нет найденных атрибутов.</p>';
-      }
-    }
+                resultDiv.appendChild(table);
+            } else {
+                resultDiv.innerHTML += '<p>Нет найденных атрибутов.</p>';
+            }
+        }
 
-    function displayConnectionNames(xmlData, resultDiv) {
-    const connectionCounts = new Map();
-    const patternMatches = xmlDoc.evaluate('//*[@CONNECTIONNAME]', xmlDoc, null, XPathResult.ANY_TYPE, null);
-    let patternMatch = patternMatches.iterateNext();
+        function displayConnectionNames(xmlData, resultDiv) {
+            const connectionCounts = new Map();
+            const patternMatches = xmlDoc.evaluate('//*[@CONNECTIONNAME]', xmlDoc, null, XPathResult.ANY_TYPE, null);
+            let patternMatch = patternMatches.iterateNext();
 
-    while (patternMatch) {
-        const attributeName = patternMatch.getAttribute('CONNECTIONNAME');
-        const count = connectionCounts.get(attributeName) || 0;
-        connectionCounts.set(attributeName, count + 1);
-        patternMatch = patternMatches.iterateNext();
-    }
+            while (patternMatch) {
+                const attributeName = patternMatch.getAttribute('CONNECTIONNAME');
+                const count = connectionCounts.get(attributeName) || 0;
+                connectionCounts.set(attributeName, count + 1);
+                patternMatch = patternMatches.iterateNext();
+            }
 
-    if (connectionCounts.size > 0) {
-        const totalCount = Array.from(connectionCounts.values()).reduce((acc, count) => acc + count, 0);
-        const uniqueCount = connectionCounts.size;
+            if (connectionCounts.size > 0) {
+                const totalCount = Array.from(connectionCounts.values()).reduce((acc, count) => acc + count, 0);
+                const uniqueCount = connectionCounts.size;
 
-        const table = document.createElement('table');
-        table.innerHTML = `
+                const table = document.createElement('table');
+                table.innerHTML = `
         <tr>
             <th>Коннекты</th>
             <th>Имена коннектов</th>
         </tr>
         `;
 
-        const row = table.insertRow();
-        const totalCountCell = row.insertCell(0);
-        totalCountCell.textContent = `Коннектов всего (${totalCount}), уникальных (${uniqueCount})`;
+                const row = table.insertRow();
+                const totalCountCell = row.insertCell(0);
+                totalCountCell.textContent = `Коннектов всего (${totalCount}), уникальных (${uniqueCount})`;
 
-        const namesCell = row.insertCell(1);
-        connectionCounts.forEach((count, attributeName) => {
-        const displayAttributeName = attributeName || 'не указано имя';
-        namesCell.innerHTML += `${displayAttributeName} (<span style="color: red;">${count}</span>), `;
-        });
+                const namesCell = row.insertCell(1);
+                connectionCounts.forEach((count, attributeName) => {
+                    const displayAttributeName = attributeName || 'не указано имя';
+                    namesCell.innerHTML += `${displayAttributeName} (<span style="color: red;">${count}</span>), `;
+                });
 
-        // Удаляем лишнюю запятую в конце списка
-        namesCell.innerHTML = namesCell.innerHTML.slice(0, -2);
+                // Удаляем лишнюю запятую в конце списка
+                namesCell.innerHTML = namesCell.innerHTML.slice(0, -2);
 
-        resultDiv.appendChild(table);
-    } else {
-        resultDiv.innerHTML += '<p>Нет найденных атрибутов CONNECTIONNAME.</p>';
-    }
-    }
+                resultDiv.appendChild(table);
+            } else {
+                resultDiv.innerHTML += '<p>Нет найденных атрибутов CONNECTIONNAME.</p>';
+            }
+        }
 
+        function exportToTxt() {
+            const resultKeywordsDiv = document.getElementById('resultKeywords');
+            const resultAttributesDiv = document.getElementById('resultAttributes');
+            const resultConnectionNamesDiv = document.getElementById('resultConnectionNames');
 
+            const resultKeywordsTxt = tableToTxt(resultKeywordsDiv);
+            const resultAttributesTxt = tableToTxt(resultAttributesDiv);
+            const resultConnectionNamesTxt = tableToTxt(resultConnectionNamesDiv);
 
+            // Combine all results into a single string
+            const finalResult = `=== Результаты ключевых слов ===\n\n${resultKeywordsTxt}\n\n=== Результаты атрибутов ===\n\n${resultAttributesTxt}\n\n=== Результаты CONNECTIONNAME ===\n\n${resultConnectionNamesTxt}`;
 
+            // Create a Blob and trigger a download
+            const blob = new Blob([finalResult], { type: 'text/plain' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = 'report.txt';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
 
+        function tableToTxt(tableDiv) {
+            const table = tableDiv.querySelector('table');
+            const rows = table.querySelectorAll('tr');
 
-    function exportToTxt() {
-      const resultKeywordsDiv = document.getElementById('resultKeywords');
-      const resultAttributesDiv = document.getElementById('resultAttributes');
-      const resultConnectionNamesDiv = document.getElementById('resultConnectionNames');
+            let result = '';
 
-      const resultKeywordsTxt = tableToTxt(resultKeywordsDiv);
-      const resultAttributesTxt = tableToTxt(resultAttributesDiv);
-      const resultConnectionNamesTxt = tableToTxt(resultConnectionNamesDiv);
+            rows.forEach(row => {
+                const cells = row.querySelectorAll('th, td');
+                cells.forEach(cell => {
+                    result += cell.textContent.trim() + '\t';
+                });
+                result += '\n';
+            });
 
-      // Combine all results into a single string
-      const finalResult = `=== Результаты ключевых слов ===\n\n${resultKeywordsTxt}\n\n=== Результаты атрибутов ===\n\n${resultAttributesTxt}\n\n=== Результаты CONNECTIONNAME ===\n\n${resultConnectionNamesTxt}`;
-
-      // Create a Blob and trigger a download
-      const blob = new Blob([finalResult], { type: 'text/plain' });
-      const a = document.createElement('a');
-      a.href = URL.createObjectURL(blob);
-      a.download = 'report.txt';
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-    }
-
-    function tableToTxt(tableDiv) {
-      const table = tableDiv.querySelector('table');
-      const rows = table.querySelectorAll('tr');
-
-      let result = '';
-
-      rows.forEach(row => {
-        const cells = row.querySelectorAll('th, td');
-        cells.forEach(cell => {
-          result += cell.textContent.trim() + '\t';
-        });
-        result += '\n';
-      });
-
-      return result;
-    }
-  </script>
+            return result;
+        }
+    </script>
 </body>
+
 </html>
