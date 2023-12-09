@@ -3,7 +3,7 @@
 <head>
   <meta charset="windows-1251">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>XML Checker v36</title>
+  <title>XML Checker v37</title>
   <style>
     .highlight {
       color: red;
@@ -54,6 +54,7 @@
     let xmlDoc;
 
     const keywords = ['DEV', 'TST', 'test', 'ONDEMAND'].map(keyword => keyword.toLowerCase());
+    const ignoreList = ['Dom_deev', 'testappClasspath', 'ignore3'].map(word => word.toLowerCase());
     const keyDescriptions = {
       'dev': 'Режим разработки',
       'tst': 'Режим тестирования',
@@ -87,7 +88,7 @@
       reader.onload = function (event) {
         const xmlData = event.target.result;
         xmlDoc = new DOMParser().parseFromString(xmlData, 'text/xml');
-        parseAndCheckTerms(xmlData, keywords, resultKeywordsDiv);
+        parseAndCheckTerms(xmlData, keywords, resultKeywordsDiv, ignoreList);
         checkForKeyValues(xmlData, resultAttributesDiv, attributesToCheck, emptyValueAttributesToCheck);
         displayConnectionNames(xmlData, resultConnectionNamesDiv);
       };
@@ -95,9 +96,40 @@
       reader.readAsText(file, 'windows-1251');
     }
 
-    function parseAndCheckTerms(xmlData, terms, resultDiv) {
+    function findTermMatches(xmlData, terms, ignoreList) {
+    const matches = [];
+
+    terms.forEach(term => {
+        const termLower = term.toLowerCase();
+        let index = xmlData.toLowerCase().indexOf(termLower);
+        while (index !== -1) {
+        const contextStart = Math.max(0, index - 5);
+        const contextEnd = Math.min(xmlData.length, index + term.length + 20);
+        const context = xmlData.substring(contextStart, contextEnd);
+
+        let isIgnored = false;
+        ignoreList.forEach(ignoreWord => {
+            if (context.toLowerCase().includes(ignoreWord)) {
+            isIgnored = true;
+            }
+        });
+
+        if (!isIgnored) {
+            matches.push({ value: term, context, contextStart, contextEnd });
+        }
+
+        index = xmlData.toLowerCase().indexOf(termLower, index + 1);
+        }
+    });
+
+    return matches;
+    }
+
+
+
+    function parseAndCheckTerms(xmlData, terms, resultDiv, ignoreList) {
       try {
-        const termMatches = findTermMatches(xmlData, terms);
+        const termMatches = findTermMatches(xmlData, terms, ignoreList);
         resultDiv.innerHTML = '<h2>Результаты:</h2>';
 
         if (termMatches.length > 0) {
@@ -206,24 +238,6 @@
       return context;
     }
 
-    function findTermMatches(xmlData, terms) {
-      const matches = [];
-
-      terms.forEach(term => {
-        const regex = new RegExp(`\\b${term}\\b`, 'gi');
-        let match;
-        while ((match = regex.exec(xmlData)) !== null) {
-          const contextStart = Math.max(0, match.index - 20);
-          const contextEnd = Math.min(xmlData.length, match.index + term.length + 20);
-          const context = xmlData.substring(contextStart, contextEnd);
-
-          matches.push({ value: match[0], context, contextStart, contextEnd });
-        }
-      });
-
-      return matches;
-    }
-
     function displayAttributeResults(resultDiv, attributeResults) {
       if (attributeResults.length > 0) {
         const table = document.createElement('table');
@@ -247,33 +261,52 @@
     }
 
     function displayConnectionNames(xmlData, resultDiv) {
-      const connectionNames = new Set();
-      const patternMatches = xmlDoc.evaluate('//*[@CONNECTIONNAME]', xmlDoc, null, XPathResult.ANY_TYPE, null);
-      let patternMatch = patternMatches.iterateNext();
-      while (patternMatch) {
-        const attributeName = patternMatch.getAttribute('CONNECTIONNAME');
-        connectionNames.add(attributeName || 'не указан коннект');
-        patternMatch = patternMatches.iterateNext();
-      }
+    const connectionCounts = new Map();
+    const patternMatches = xmlDoc.evaluate('//*[@CONNECTIONNAME]', xmlDoc, null, XPathResult.ANY_TYPE, null);
+    let patternMatch = patternMatches.iterateNext();
 
-      if (connectionNames.size > 0) {
+    while (patternMatch) {
+        const attributeName = patternMatch.getAttribute('CONNECTIONNAME');
+        const count = connectionCounts.get(attributeName) || 0;
+        connectionCounts.set(attributeName, count + 1);
+        patternMatch = patternMatches.iterateNext();
+    }
+
+    if (connectionCounts.size > 0) {
+        const totalCount = Array.from(connectionCounts.values()).reduce((acc, count) => acc + count, 0);
+        const uniqueCount = connectionCounts.size;
+
         const table = document.createElement('table');
         table.innerHTML = `
-          <tr>
-            <th>Сообщение</th>
-            <th>Список</th>
-          </tr>
+        <tr>
+            <th>Коннекты</th>
+            <th>Имена коннектов</th>
+        </tr>
         `;
 
         const row = table.insertRow();
-        row.insertCell(0).textContent = 'Все имена коннектов';
-        row.insertCell(1).textContent = Array.from(connectionNames).join(', ');
+        const totalCountCell = row.insertCell(0);
+        totalCountCell.textContent = `Коннектов всего (${totalCount}), уникальных (${uniqueCount})`;
+
+        const namesCell = row.insertCell(1);
+        connectionCounts.forEach((count, attributeName) => {
+        const displayAttributeName = attributeName || 'не указано имя';
+        namesCell.innerHTML += `${displayAttributeName} (<span style="color: red;">${count}</span>), `;
+        });
+
+        // Удаляем лишнюю запятую в конце списка
+        namesCell.innerHTML = namesCell.innerHTML.slice(0, -2);
 
         resultDiv.appendChild(table);
-      } else {
+    } else {
         resultDiv.innerHTML += '<p>Нет найденных атрибутов CONNECTIONNAME.</p>';
-      }
     }
+    }
+
+
+
+
+
 
     function exportToTxt() {
       const resultKeywordsDiv = document.getElementById('resultKeywords');
