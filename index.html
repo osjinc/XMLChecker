@@ -4,7 +4,7 @@
 <head>
     <meta charset="windows-1251">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XML Checker v40</title>
+    <title>XML Checker v41</title>
     <style>
         .highlight {
             color: red;
@@ -324,27 +324,22 @@
 
         function checkLogFileNames() {
             const logFileNames = [];
-
-            const sessionLogFile = xmlDoc.querySelector('ATTRIBUTE[NAME="Session Log File Name"]');
-            const workflowLogFile = xmlDoc.querySelector('ATTRIBUTE[NAME="Workflow Log File Name"]');
-
-            if (sessionLogFile) {
-                const sessionLogFileName = sessionLogFile.getAttribute('VALUE');
-                logFileNames.push(sessionLogFileName);
-            }
-
-            if (workflowLogFile) {
-                const workflowLogFileName = workflowLogFile.getAttribute('VALUE');
-                logFileNames.push(workflowLogFileName);
-            }
-
+        
+            const logFileAttributes = xmlDoc.querySelectorAll('ATTRIBUTE[NAME="Session Log File Name"][VALUE$=".log"], ATTRIBUTE[NAME="Workflow Log File Name"][VALUE$=".log"]');
+        
+            logFileAttributes.forEach(attribute => {
+                const logFileName = attribute.getAttribute('VALUE');
+                logFileNames.push(logFileName);
+            });
+        
             const duplicateLogFiles = findDuplicates(logFileNames);
-
+        
             if (duplicateLogFiles.length > 0) {
                 const resultAttributesDiv = document.getElementById('resultAttributes');
                 displayDuplicateLogFiles(resultAttributesDiv, duplicateLogFiles);
             }
         }
+        
 
         function findDuplicates(array) {
             const counts = new Map();
@@ -410,7 +405,7 @@
             });
 
             if (recommendationTable.rows.length > 1) {
-                resultAttributesDiv.innerHTML += '<h2>Рекомендации по атрибутам:</h2>';
+                resultAttributesDiv.innerHTML += '<h2>Рекомендации по хранению логов:</h2>';
                 resultAttributesDiv.appendChild(recommendationTable);
             }
         }
@@ -419,7 +414,7 @@
             const row = table.insertRow();
             row.insertCell(0).textContent = attributeName;
             row.insertCell(1).textContent = attributeValue;
-            row.insertCell(2).innerHTML = `<span class="warning">${recommendation}</span>`;
+            row.insertCell(2).innerHTML = `<span class="highlight">${recommendation}</span>`;
         }
         
         function exportToTxt() {
