@@ -4,7 +4,7 @@
 <head>
     <meta charset="windows-1251">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XML Checker v39</title>
+    <title>XML Checker v40</title>
     <style>
         .highlight {
             color: red;
@@ -109,6 +109,8 @@
                 parseAndCheckTerms(xmlData, keywords, resultKeywordsDiv, ignoreList);
                 checkForKeyValues(xmlData, resultAttributesDiv, attributesToCheck, emptyValueAttributesToCheck);
                 displayConnectionNames(xmlData, resultConnectionNamesDiv);
+                checkLogFileNames();
+                checkSessionLogAttributes();
 
                 loadingIndicator.style.display = 'none'; // Скрыть индикатор выполнения
             };
@@ -320,6 +322,106 @@
             }
         }
 
+        function checkLogFileNames() {
+            const logFileNames = [];
+
+            const sessionLogFile = xmlDoc.querySelector('ATTRIBUTE[NAME="Session Log File Name"]');
+            const workflowLogFile = xmlDoc.querySelector('ATTRIBUTE[NAME="Workflow Log File Name"]');
+
+            if (sessionLogFile) {
+                const sessionLogFileName = sessionLogFile.getAttribute('VALUE');
+                logFileNames.push(sessionLogFileName);
+            }
+
+            if (workflowLogFile) {
+                const workflowLogFileName = workflowLogFile.getAttribute('VALUE');
+                logFileNames.push(workflowLogFileName);
+            }
+
+            const duplicateLogFiles = findDuplicates(logFileNames);
+
+            if (duplicateLogFiles.length > 0) {
+                const resultAttributesDiv = document.getElementById('resultAttributes');
+                displayDuplicateLogFiles(resultAttributesDiv, duplicateLogFiles);
+            }
+        }
+
+        function findDuplicates(array) {
+            const counts = new Map();
+
+            array.forEach(item => {
+                counts.set(item, (counts.get(item) || 0) + 1);
+            });
+
+            const duplicates = Array.from(counts.entries()).filter(entry => entry[1] > 1);
+
+            return duplicates;
+        }
+
+        function displayDuplicateLogFiles(resultDiv, duplicateLogFiles) {
+            if (duplicateLogFiles.length > 0) {
+                const table = document.createElement('table');
+                table.innerHTML = `
+                    <tr>
+                        <th>Дублирующиеся лог-файлы</th>
+                    </tr>
+                `;
+
+                duplicateLogFiles.forEach(entry => {
+                    const row = table.insertRow();
+                    row.insertCell(0).innerHTML = `<span class="highlight">${entry[0]}</span>`;
+                });
+
+                resultDiv.innerHTML += '<h2>Найдены дублирующиеся лог-файлы:</h2>';
+                resultDiv.appendChild(table);
+            }
+        }
+
+        function checkSessionLogAttributes() {
+            const sessionLogAttributes = xmlDoc.querySelectorAll('CONFIG ATTRIBUTE');
+
+            const resultAttributesDiv = document.getElementById('resultAttributes');
+            const recommendationTable = document.createElement('table');
+            recommendationTable.innerHTML = `
+                <tr>
+                    <th>Атрибут</th>
+                    <th>Значение</th>
+                    <th>Рекомендация</th>
+                </tr>
+            `;
+
+            sessionLogAttributes.forEach(attribute => {
+                const attributeName = attribute.getAttribute('NAME');
+                const attributeValue = attribute.getAttribute('VALUE');
+
+                if (attributeName === 'Save session log by') {
+                    if (attributeValue === 'Session runs') {
+                        const saveForTheseRuns = xmlDoc.querySelector('ATTRIBUTE[NAME="Save session log for these runs"]');
+                        if (!saveForTheseRuns || saveForTheseRuns.getAttribute('VALUE') === '0') {
+                            addRecommendation(recommendationTable, attributeName, attributeValue, 'Укажите значение больше 0 для атрибута "Save session log for these runs".');
+                        }
+                    } else if (attributeValue === 'Session timestamp') {
+                        const maxTimePeriod = xmlDoc.querySelector('ATTRIBUTE[NAME="Session Log File Max Time Period"]');
+                        if (!maxTimePeriod || maxTimePeriod.getAttribute('VALUE') === '0') {
+                            addRecommendation(recommendationTable, attributeName, attributeValue, 'Укажите значение больше 0 для атрибута "Session Log File Max Time Period" (в часах).');
+                        }
+                    }
+                }
+            });
+
+            if (recommendationTable.rows.length > 1) {
+                resultAttributesDiv.innerHTML += '<h2>Рекомендации по атрибутам:</h2>';
+                resultAttributesDiv.appendChild(recommendationTable);
+            }
+        }
+
+        function addRecommendation(table, attributeName, attributeValue, recommendation) {
+            const row = table.insertRow();
+            row.insertCell(0).textContent = attributeName;
+            row.insertCell(1).textContent = attributeValue;
+            row.insertCell(2).innerHTML = `<span class="warning">${recommendation}</span>`;
+        }
+        
         function exportToTxt() {
             const resultKeywordsDiv = document.getElementById('resultKeywords');
             const resultAttributesDiv = document.getElementById('resultAttributes');
