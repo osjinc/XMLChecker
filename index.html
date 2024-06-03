@@ -4,7 +4,7 @@
 <head>
     <meta charset="windows-1251">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XML Checker v41</title>
+    <title>XML Checker v42</title>
     <style>
         .highlight {
             color: red;
@@ -57,6 +57,8 @@
     <div id="resultKeywords"></div>
     <div id="resultAttributes"></div>
     <div id="resultConnectionNames"></div>
+    <div id="resultConnectionVariablesAndAttributes"></div>
+
     <button id="exportButton" onclick="exportToTxt()">Создать отчет и экспорт в TXT</button>
     <div id="loadingIndicator">Анализ кода...</div>
 
@@ -86,6 +88,7 @@
             const resultAttributesDiv = document.getElementById('resultAttributes');
             const resultConnectionNamesDiv = document.getElementById('resultConnectionNames');
             const loadingIndicator = document.getElementById('loadingIndicator');
+            const resultConnectionVariablesAndAttributesDiv = document.getElementById('resultConnectionVariablesAndAttributes');
 
             const file = fileInput.files[0];
 
@@ -111,6 +114,8 @@
                 displayConnectionNames(xmlData, resultConnectionNamesDiv);
                 checkLogFileNames();
                 checkSessionLogAttributes();
+                checkConnectionVariablesAndAttributes(xmlDoc, resultConnectionVariablesAndAttributesDiv);
+
 
                 loadingIndicator.style.display = 'none'; // Скрыть индикатор выполнения
             };
@@ -315,7 +320,7 @@
 
                 // Удаляем лишнюю запятую в конце списка
                 namesCell.innerHTML = namesCell.innerHTML.slice(0, -2);
-
+                resultDiv.innerHTML = '<h2>Проверка CONNECTIONNAME:</h2>';
                 resultDiv.appendChild(table);
             } else {
                 resultDiv.innerHTML += '<p>Нет найденных атрибутов CONNECTIONNAME.</p>';
@@ -417,17 +422,111 @@
             row.insertCell(2).innerHTML = `<span class="highlight">${recommendation}</span>`;
         }
         
+// проверка атрибутов коннекта
+
+        function checkConnectionVariables() {
+            const connectionVariables = new Map();
+            const sessionExtensions = xmlDoc.querySelectorAll('SESSIONEXTENSION');
+
+            sessionExtensions.forEach(extension => {
+                const connectionReference = extension.querySelector('CONNECTIONREFERENCE');
+                if (connectionReference) {
+                    const variable = connectionReference.getAttribute('VARIABLE');
+                    const connectionName = connectionReference.getAttribute('CONNECTIONNAME');
+                    if (variable && connectionName) {
+                        connectionVariables.set(variable, connectionName);
+                    }
+                }
+            });
+
+            return connectionVariables;
+        }
+
+        function displayConnectionVariables(resultDiv, connectionVariables) {
+            if (connectionVariables.size > 0) {
+                const table = document.createElement('table');
+                table.innerHTML = `
+                    <tr>
+                        <th>Переменная</th>
+                        <th>Имя коннекта</th>
+                    </tr>
+                `;
+
+                connectionVariables.forEach((connectionName, variable) => {
+                    const row = table.insertRow();
+                    row.insertCell(0).textContent = variable;
+                    row.insertCell(1).textContent = connectionName;
+                });
+
+                resultDiv.innerHTML = '<h2>Проверка переменных соединений:</h2>';
+                resultDiv.appendChild(table);
+            } else {
+                resultDiv.innerHTML = '<p>Нет найденных переменных соединений.</p>';
+            }
+        }
+
+        function checkConnectionAttributes() {
+            const connectionAttributes = [];
+            const attributes = xmlDoc.querySelectorAll('ATTRIBUTE');
+
+            attributes.forEach(attribute => {
+                const attributeName = attribute.getAttribute('NAME');
+                const attributeValue = attribute.getAttribute('VALUE');
+                if (attributeName.startsWith('$') && attributeValue.startsWith('Relational:')) {
+                    const variable = attributeName.slice(1);
+                    const connectionName = attributeValue.slice('Relational:'.length);
+                    connectionAttributes.push({ variable, connectionName });
+                }
+            });
+
+            return connectionAttributes;
+        }
+
+        function displayConnectionAttributes(resultDiv, connectionAttributes) {
+            if (connectionAttributes.length > 0) {
+                const table = document.createElement('table');
+                table.innerHTML = `
+                    <tr>
+                        <th>Переменная $</th>
+                        <th>Имя коннекта</th>
+                    </tr>
+                `;
+
+                connectionAttributes.forEach(({ variable, connectionName }) => {
+                    const row = table.insertRow();
+                    row.insertCell(0).textContent = variable;
+                    row.insertCell(1).textContent = connectionName;
+                });
+
+                resultDiv.innerHTML = '<h2>Проверка атрибутов соединений:</h2>';
+                resultDiv.appendChild(table);
+            } else {
+                resultDiv.innerHTML = '<p>Нет найденных атрибутов соединений.</p>';
+            }
+        }
+
+        function checkConnectionVariablesAndAttributes() {
+            const resultDiv = document.getElementById('resultConnectionVariablesAndAttributes');
+            const connectionVariables = checkConnectionVariables();
+            const connectionAttributes = checkConnectionAttributes();
+            displayConnectionVariables(resultDiv, connectionVariables);
+            displayConnectionAttributes(resultDiv, connectionAttributes);
+        }
+
+
         function exportToTxt() {
             const resultKeywordsDiv = document.getElementById('resultKeywords');
             const resultAttributesDiv = document.getElementById('resultAttributes');
             const resultConnectionNamesDiv = document.getElementById('resultConnectionNames');
+            const resultConnectionVariablesAndAttributesDiv = document.getElementById('resultConnectionVariablesAndAttributes');
 
             const resultKeywordsTxt = tableToTxt(resultKeywordsDiv);
             const resultAttributesTxt = tableToTxt(resultAttributesDiv);
             const resultConnectionNamesTxt = tableToTxt(resultConnectionNamesDiv);
+            const resultConnectionVariablesAndAttributesTxt = tableToTxt(resultConnectionVariablesAndAttributesDiv);
 
             // Combine all results into a single string
-            const finalResult = `=== Результаты ключевых слов ===\n\n${resultKeywordsTxt}\n\n=== Результаты атрибутов ===\n\n${resultAttributesTxt}\n\n=== Результаты CONNECTIONNAME ===\n\n${resultConnectionNamesTxt}`;
+            const finalResult = `=== Результаты ключевых слов ===\n\n${resultKeywordsTxt}\n\n=== Результаты атрибутов ===\n\n${resultAttributesTxt}\n\n=== Результаты CONNECTIONNAME ===\n\n${resultConnectionNamesTxt}\n\n=== Результаты проверки атрибутов соединений===\n\n${resultConnectionVariablesAndAttributesTxt}`;
 
             // Create a Blob and trigger a download
             const blob = new Blob([finalResult], { type: 'text/plain' });
