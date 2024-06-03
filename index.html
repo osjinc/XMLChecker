@@ -4,7 +4,7 @@
 <head>
     <meta charset="windows-1251">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XML Checker v42</title>
+    <title>XML Checker v43</title>
     <style>
         .highlight {
             color: red;
@@ -101,6 +101,7 @@
             resultKeywordsDiv.innerHTML = '';
             resultAttributesDiv.innerHTML = '';
             resultConnectionNamesDiv.innerHTML = '';
+            resultConnectionVariablesAndAttributesDiv.innerHTML = '';
 
             loadingIndicator.style.display = 'block'; // Показать индикатор выполнения
 
@@ -482,11 +483,12 @@
             return connectionAttributes;
         }
 
-        function displayConnectionAttributes(resultDiv, connectionAttributes) {
+        function displayConnectionAttributes(resultDiv, connectionAttributes, sessionName) {
             if (connectionAttributes.length > 0) {
                 const table = document.createElement('table');
                 table.innerHTML = `
                     <tr>
+                        <th>Имя сессии</th>
                         <th>Переменная $</th>
                         <th>Имя коннекта</th>
                     </tr>
@@ -494,8 +496,9 @@
 
                 connectionAttributes.forEach(({ variable, connectionName }) => {
                     const row = table.insertRow();
-                    row.insertCell(0).textContent = variable;
-                    row.insertCell(1).textContent = connectionName;
+                    row.insertCell(0).textContent = sessionName; // Вставляем имя сессии
+                    row.insertCell(1).textContent = variable;
+                    row.insertCell(2).textContent = connectionName;
                 });
 
                 resultDiv.innerHTML = '<h2>Проверка атрибутов соединений:</h2>';
@@ -509,8 +512,18 @@
             const resultDiv = document.getElementById('resultConnectionVariablesAndAttributes');
             const connectionVariables = checkConnectionVariables();
             const connectionAttributes = checkConnectionAttributes();
+            const sessionName = getSessionName(); // Получаем имя сессии
             displayConnectionVariables(resultDiv, connectionVariables);
-            displayConnectionAttributes(resultDiv, connectionAttributes);
+            displayConnectionAttributes(resultDiv, connectionAttributes, sessionName); // Передаем имя сессии
+        }
+
+        // Функция для получения имени сессии из XML
+        function getSessionName() {
+            const sessionNode = xmlDoc.querySelector('SESSION');
+            if (sessionNode) {
+                return sessionNode.getAttribute('NAME') || 'Нет имени сессии'; // Если имя сессии отсутствует, возвращаем заглушку
+            }
+            return 'Нет сессии в XML'; // Если сессия отсутствует, возвращаем заглушку
         }
 
 
