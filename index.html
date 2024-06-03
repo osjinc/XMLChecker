@@ -4,7 +4,7 @@
 <head>
     <meta charset="windows-1251">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>XML Checker v43</title>
+    <title>XML Checker v44</title>
     <style>
         .highlight {
             color: red;
@@ -427,17 +427,24 @@
 
         function checkConnectionVariables() {
             const connectionVariables = new Map();
-            const sessionExtensions = xmlDoc.querySelectorAll('SESSIONEXTENSION');
+            const sessions = xmlDoc.querySelectorAll('SESSION');
 
-            sessionExtensions.forEach(extension => {
-                const connectionReference = extension.querySelector('CONNECTIONREFERENCE');
-                if (connectionReference) {
-                    const variable = connectionReference.getAttribute('VARIABLE');
-                    const connectionName = connectionReference.getAttribute('CONNECTIONNAME');
-                    if (variable && connectionName) {
-                        connectionVariables.set(variable, connectionName);
+            sessions.forEach(session => {
+                const sessionName = session.getAttribute('NAME') || 'Нет имени сессии';
+                const mappingName = session.getAttribute('MAPPINGNAME') || 'Нет имени маппинга';
+
+                const sessionExtensions = session.querySelectorAll('SESSIONEXTENSION');
+
+                sessionExtensions.forEach(extension => {
+                    const connectionReference = extension.querySelector('CONNECTIONREFERENCE');
+                    if (connectionReference) {
+                        const variable = connectionReference.getAttribute('VARIABLE');
+                        const connectionName = connectionReference.getAttribute('CONNECTIONNAME');
+                        if (variable && connectionName) {
+                            connectionVariables.set(variable, { connectionName, sessionName, mappingName });
+                        }
                     }
-                }
+                });
             });
 
             return connectionVariables;
@@ -448,15 +455,19 @@
                 const table = document.createElement('table');
                 table.innerHTML = `
                     <tr>
+                        <th>Имя сессии</th>
+                        <th>Имя маппинга</th>
                         <th>Переменная</th>
                         <th>Имя коннекта</th>
                     </tr>
                 `;
 
-                connectionVariables.forEach((connectionName, variable) => {
+                connectionVariables.forEach(({ connectionName, sessionName, mappingName }, variable) => {
                     const row = table.insertRow();
-                    row.insertCell(0).textContent = variable;
-                    row.insertCell(1).textContent = connectionName;
+                    row.insertCell(0).textContent = sessionName;
+                    row.insertCell(1).textContent = mappingName;
+                    row.insertCell(2).textContent = variable;
+                    row.insertCell(3).textContent = connectionName;
                 });
 
                 resultDiv.innerHTML = '<h2>Проверка переменных соединений:</h2>';
@@ -468,37 +479,46 @@
 
         function checkConnectionAttributes() {
             const connectionAttributes = [];
-            const attributes = xmlDoc.querySelectorAll('ATTRIBUTE');
+            const sessions = xmlDoc.querySelectorAll('SESSION');
 
-            attributes.forEach(attribute => {
-                const attributeName = attribute.getAttribute('NAME');
-                const attributeValue = attribute.getAttribute('VALUE');
-                if (attributeName.startsWith('$') && attributeValue.startsWith('Relational:')) {
-                    const variable = attributeName.slice(1);
-                    const connectionName = attributeValue.slice('Relational:'.length);
-                    connectionAttributes.push({ variable, connectionName });
-                }
+            sessions.forEach(session => {
+                const sessionName = session.getAttribute('NAME') || 'Нет имени сессии';
+                const mappingName = session.getAttribute('MAPPINGNAME') || 'Нет имени маппинга';
+
+                const attributes = session.querySelectorAll('ATTRIBUTE');
+
+                attributes.forEach(attribute => {
+                    const attributeName = attribute.getAttribute('NAME');
+                    const attributeValue = attribute.getAttribute('VALUE');
+                    if (attributeName.startsWith('$') && attributeValue.startsWith('Relational:')) {
+                        const variable = attributeName.slice(1);
+                        const connectionName = attributeValue.slice('Relational:'.length);
+                        connectionAttributes.push({ variable, connectionName, sessionName, mappingName });
+                    }
+                });
             });
 
             return connectionAttributes;
         }
 
-        function displayConnectionAttributes(resultDiv, connectionAttributes, sessionName) {
+        function displayConnectionAttributes(resultDiv, connectionAttributes) {
             if (connectionAttributes.length > 0) {
                 const table = document.createElement('table');
                 table.innerHTML = `
                     <tr>
                         <th>Имя сессии</th>
+                        <th>Имя маппинга</th>
                         <th>Переменная $</th>
                         <th>Имя коннекта</th>
                     </tr>
                 `;
 
-                connectionAttributes.forEach(({ variable, connectionName }) => {
+                connectionAttributes.forEach(({ variable, connectionName, sessionName, mappingName }) => {
                     const row = table.insertRow();
-                    row.insertCell(0).textContent = sessionName; // Вставляем имя сессии
-                    row.insertCell(1).textContent = variable;
-                    row.insertCell(2).textContent = connectionName;
+                    row.insertCell(0).textContent = sessionName;
+                    row.insertCell(1).textContent = mappingName;
+                    row.insertCell(2).textContent = variable;
+                    row.insertCell(3).textContent = connectionName;
                 });
 
                 resultDiv.innerHTML = '<h2>Проверка атрибутов соединений:</h2>';
@@ -512,9 +532,8 @@
             const resultDiv = document.getElementById('resultConnectionVariablesAndAttributes');
             const connectionVariables = checkConnectionVariables();
             const connectionAttributes = checkConnectionAttributes();
-            const sessionName = getSessionName(); // Получаем имя сессии
             displayConnectionVariables(resultDiv, connectionVariables);
-            displayConnectionAttributes(resultDiv, connectionAttributes, sessionName); // Передаем имя сессии
+            displayConnectionAttributes(resultDiv, connectionAttributes);
         }
 
         // Функция для получения имени сессии из XML
@@ -525,7 +544,13 @@
             }
             return 'Нет сессии в XML'; // Если сессия отсутствует, возвращаем заглушку
         }
-
+        function getMappingName() {
+            const sessionNode = xmlDoc.querySelector('SESSION');
+            if (sessionNode) {
+                return sessionNode.getAttribute('MAPPINGNAME') || 'Нет имени сессии'; // Если имя сессии отсутствует, возвращаем заглушку
+            }
+            return 'Нет сессии в XML'; // Если сессия отсутствует, возвращаем заглушку
+        }
 
         function exportToTxt() {
             const resultKeywordsDiv = document.getElementById('resultKeywords');
